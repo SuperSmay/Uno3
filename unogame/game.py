@@ -154,6 +154,7 @@ class UnoGame:
                 # Reset the stack if jump-ins are supposed to clear the stack
                 self.current_stack = 0
 
+
             self.process_card_state_changes(player, card)
 
         # If we weren't waiting for a normal play and it wasn't a valid jump-in, then check for wild colors
