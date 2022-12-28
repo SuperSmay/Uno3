@@ -1,4 +1,4 @@
-from unogame.game import UnoGame, UnoRules, UnoStates, OutOfTurnError, OutOfCardsError, InvalidCardPlayedError, PlayerDoesNotHaveCardError
+from unogame.game import UnoGame, UnoRules, UnoStates, OutOfTurnError, OutOfCardsError, InvalidCardPlayedError, PlayerDoesNotHaveCardError, MustPlayCardError
 from unogame.player import Player
 from unogame.card import Card, CardColors, CardFaces
 from unogame.deck import DeckManager
@@ -293,3 +293,101 @@ def test_reverse_skip_cards():
 
     assert test_game.turn_index == 1
     assert test_game.reversed
+
+def test_draw_card_move():
+
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+
+    # All of the cards are green to make my life easier
+    # Player 0 has lots of cards to stop them from winning during this test
+    player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.EIGHT)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
+
+    test_game.players.append(Player(0))
+    test_game.players.append(Player(1))
+    
+    test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
+
+    test_game.start_game()
+
+    # We're going to test in single draw mode for most of this to make it easier
+    test_game.ruleset.draw_until_can_play = False
+
+    # Start with forceplay on
+    test_game.ruleset.force_play = True
+
+    # Because forceplay is on and they have a valid move, player 0 should not be able to choose to draw a card
+    try:
+        test_game.draw_card_move(player_0)
+        raise AssertionError("draw_card_move should have raised a MustPlayCardError")
+    except MustPlayCardError:
+        pass
+
+    # Then disable forceplay and check that the player draws a card now
+    test_game.ruleset.force_play = False
+    test_game.draw_card_move(player_0)
+
+    assert player_0.hand.__len__() == 3
+
+    # They shouldn't be able to draw twice
+    try:
+        test_game.draw_card_move(player_0)
+        raise AssertionError("draw_card_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
+
+    # Now they can play a card and finish their turn
+    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.EIGHT))
+
+    # Player 1 plays a plus two, so player 0 must now accept that draw and cannot use this function
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+
+    try:
+        test_game.draw_card_move(player_0)
+        raise AssertionError("draw_card_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
+
+    # Now reset the game and test multi-draw
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+
+    # All of the cards are green to make my life easier
+    # Player 0 has lots of cards to stop them from winning during this test
+    player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.BLUE, CardFaces.NINE)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
+
+    test_game.players.append(Player(0))
+    test_game.players.append(Player(1))
+    
+    test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
+
+    test_game.start_game()
+
+    # Draw 'til you die
+    test_game.ruleset.draw_until_can_play = True
+
+    # Start with forceplay on
+    test_game.ruleset.force_play = True
+
+    # Player 0 has no valid moves, so they draw
+    test_game.draw_card_move(player_0)
+
+    # They should have drawn a card that they can play
+    assert player_0.has_card_to_play(test_game.deck.top_card)
+
+    # The last card they drew should be the one they can play
+    test_game.play_card_move(player_0, player_0.hand[-1])
+
+    # Reset the top card to what it was before
+    test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
+
+    # They should only have one card that could be played on that
+    assert not player_0.has_card_to_play(test_game.deck.top_card)

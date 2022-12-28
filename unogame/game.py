@@ -184,13 +184,16 @@ class UnoGame:
     def draw_card_move(self, player: Player) -> None:
         """
         The given player draws a card, or as many cards as needed to obtain a playable card,
-        based on ruleset.draw_until_can_play
+        based on ruleset.draw_until_can_play.
+        Although this may be confusing, this function does not work to accept drawing cards from a plus card.
+        Use plus_response_move instead.
 
         Args:
             player (Player): The player drawing cards
 
         Raises:
-            OutOfTurnError: If it is not the player's turn
+            OutOfTurnError: If it is not the player's turn, or drawing a card is not a valid option
+            MustPlayCardError: If forceplay is on and the player can play a card
         """
 
         # Make sure its this player's turn
