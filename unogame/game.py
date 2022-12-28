@@ -336,25 +336,23 @@ class UnoGame:
             self.state = UnoStates.WAITING_FOR_WILD_COLOR
         elif card.face == CardFaces.PLUS_FOUR:
             self.current_stack += 4
-            self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
             self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
         elif card.face == CardFaces.PLUS_TWO:
             self.current_stack += 2
-            self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
             self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
         elif card.face == CardFaces.SKIP:
-            self.state = UnoStates.WAITING_FOR_PLAY
             self.turn_index = (self.turn_index + (2 if not self.reversed else -2)) % len(self.players)
-        elif card.face == CardFaces.REVERSE:
             self.state = UnoStates.WAITING_FOR_PLAY
+        elif card.face == CardFaces.REVERSE:
+            self.reversed = not self.reversed
             if len(self.players) == 2:
                 # Acts as a skip in 1v1 per Uno rules
                 self.turn_index = (self.turn_index + (2 if not self.reversed else -2)) % len(self.players)
-                # I mean its not like it matters here but oh well
-                self.reversed = not self.reversed
             else:
                 self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
-                self.reversed = not self.reversed
+            self.state = UnoStates.WAITING_FOR_PLAY
         else:
             self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
 
