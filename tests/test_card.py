@@ -28,8 +28,10 @@ def test_can_be_played():
     test_card_two = Card(CardColors.BLUE, CardFaces.THREE)
     # Playable by both
     test_card_three = Card(CardColors.YELLOW, CardFaces.THREE)
+    # Playable by wild
+    test_card_four = Card(CardColors.WILD, CardFaces.PLUS_FOUR)
     # Not playable
-    test_card_four = Card(CardColors.RED, CardFaces.SEVEN)
+    test_card_five = Card(CardColors.RED, CardFaces.SEVEN)
 
     assert test_card_one.can_be_played(test_top_card)
 
@@ -37,7 +39,9 @@ def test_can_be_played():
 
     assert test_card_three.can_be_played(test_top_card)
 
-    assert not test_card_four.can_be_played(test_top_card)
+    assert test_card_four.can_be_played(test_top_card)
+
+    assert not test_card_five.can_be_played(test_top_card)
 
 def test_can_be_jumped_in():
 
@@ -52,6 +56,11 @@ def test_can_be_jumped_in():
     # Not playable, neither match
     test_card_four = Card(CardColors.BLUE, CardFaces.SEVEN)
 
+    test_top_wild = Card(CardColors.BLUE, CardFaces.WILD)
+
+    # Playable by matching wild face
+    test_card_five = Card(CardColors.WILD, CardFaces.WILD)
+
     assert test_card_one.can_be_jumped_in(test_top_card)
 
     assert not test_card_two.can_be_jumped_in(test_top_card)
@@ -59,3 +68,5 @@ def test_can_be_jumped_in():
     assert not test_card_three.can_be_jumped_in(test_top_card)
 
     assert not test_card_four.can_be_jumped_in(test_top_card)
+
+    assert test_card_five.can_be_jumped_in(test_top_wild)

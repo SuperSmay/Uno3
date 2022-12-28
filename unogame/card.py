@@ -6,9 +6,10 @@ from unogame.card_image_dictionaries import card_emoji, card_images
 
 class Card:
 
-    def __init__(self, color: CardColors, face: CardFaces) -> None:
+    def __init__(self, color: CardColors, face: CardFaces, return_to_discard: bool = True) -> None:
         self.color = color
         self.face = face
+        self.return_to_discard = return_to_discard
 
     def get_emoji_mention(self) -> str:
         """
@@ -78,8 +79,19 @@ class Card:
         if self.color == other_card.color and self.face == other_card.face:
             return True
 
+        # If the face is wild or plus_four and matches, then we good
+        if (self.face == CardFaces.WILD or self.face == CardFaces.PLUS_FOUR) and self.face == other_card.face:
+            return True
+
         # Otherwise, they don't match
         return False
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, Card):
+            return __o.color == self.color and __o.face == self.face
+        else:
+            return False
+
 
 
 
@@ -107,3 +119,4 @@ class CardFaces(Enum):
     REVERSE = 'reverse'
     PLUS_TWO = 'plus_two'
     PLUS_FOUR = 'plus_four'
+    WILD = 'wild'
