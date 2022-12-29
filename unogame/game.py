@@ -129,6 +129,62 @@ class UnoGame:
 
             self.process_card_state_changes(player, card)
 
+        elif (self.state == UnoStates.WAITING_FOR_PLUS_RESPONSE):
+            # If the card is a plus card that can be stacked, then the card is added to the stack and play continues
+            # Keep in mind the various rules for stacking plus_twos on plus_fours
+
+            # Case stacking is off
+            if not self.ruleset.stacking:
+                raise InvalidCardPlayedError("Stacking is disabled")
+
+            # Case standard stack
+            elif self.deck.top_card.face == card.face:
+                # The card can be played as normal
+
+                # Update the state so play_card_move will process it
+                self.state = UnoStates.WAITING_FOR_PLAY
+
+                self.play_card_move(player, card)
+
+            # Case plus fours can be stacked on plus twos
+            elif (self.ruleset.stack_plus_fours_on_plus_twos and
+                    self.deck.top_card.face == CardFaces.PLUS_TWO and 
+                    card.face == CardFaces.PLUS_FOUR):
+                # The card can be played as normal
+
+                # Update the state so play_card_move will process it
+                self.state = UnoStates.WAITING_FOR_PLAY
+
+                self.play_card_move(player, card)
+
+            # Case plus twos can always be stacked on plus fours
+            elif (self.ruleset.stack_all_plus_twos_on_plus_fours and 
+                    self.deck.top_card.face == CardFaces.PLUS_FOUR and 
+                    card.face == CardFaces.PLUS_TWO):
+                # The card can be played as normal
+
+                # Update the state so play_card_move will process it
+                self.state = UnoStates.WAITING_FOR_PLAY
+
+                # We must bypass restrictions in this case, because the plus two may not normally be a valid move
+                self.play_card_move(player, card, True)
+
+            # Case only color matched plus twos can be stacked on plus fours
+            elif (self.ruleset.stack_color_matching_plus_twos_on_plus_fours and 
+                    self.deck.top_card.face == CardFaces.PLUS_FOUR and 
+                    card.face == CardFaces.PLUS_TWO and
+                    self.deck.top_card.color == card.color):
+                # The card can be played as normal
+
+                # Update the state so play_card_move will process it
+                self.state = UnoStates.WAITING_FOR_PLAY
+
+                self.play_card_move(player, card)
+
+
+            # If the card is anything else, thats an InvalidCardPlayedError
+            else:
+                raise InvalidCardPlayedError
 
         # Otherwise, if the card is a jump-in (and the jump-in rule is enabled), then its always* valid
         # *not valid if the game hasn't started
@@ -249,82 +305,6 @@ class UnoGame:
         self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
         self.state = UnoStates.WAITING_FOR_PLAY
 
-        
-
-    def plus_response_move(self, player: Player, card: Card) -> None:
-        """
-        Handles a player's response to a plus card (or a stack) being targeted at them.
-
-        Args:
-            player (Player): The player who sent the response
-            card (Card): The card they sent as a response
-
-        Raises:
-            OutOfTurnError: It isn't this player's turn
-            InvalidCardPlayedError: Stacking is off and the player tried to stack
-            PlayerDoesNotHaveCardError: The play was valid, but the player did not have the card they attempted to play
-        """
-
-        # Obviously if we aren't waiting for a plus response, then this is out of turn
-        if self.state != UnoStates.WAITING_FOR_PLUS_RESPONSE or self.players[self.turn_index] != player:
-            raise OutOfTurnError
-
-        # If the card is a plus card that can be stacked, then the card is added to the stack and play continues
-        # Keep in mind the various rules for stacking plus_twos on plus_fours
-
-        # Case stacking is off
-        elif not self.ruleset.stacking:
-            raise InvalidCardPlayedError("Stacking is disabled")
-
-        # Case standard stack
-        elif self.deck.top_card.face == card.face:
-            # The card can be played as normal
-
-            # Update the state so play_card_move will process it
-            self.state = UnoStates.WAITING_FOR_PLAY
-
-            self.play_card_move(player, card)
-
-        # Case plus fours can be stacked on plus twos
-        elif (self.ruleset.stack_plus_fours_on_plus_twos and
-                self.deck.top_card.face == CardFaces.PLUS_TWO and 
-                card.face == CardFaces.PLUS_FOUR):
-            # The card can be played as normal
-
-            # Update the state so play_card_move will process it
-            self.state = UnoStates.WAITING_FOR_PLAY
-
-            self.play_card_move(player, card)
-
-        # Case plus twos can always be stacked on plus fours
-        elif (self.ruleset.stack_all_plus_twos_on_plus_fours and 
-                self.deck.top_card.face == CardFaces.PLUS_FOUR and 
-                card.face == CardFaces.PLUS_TWO):
-            # The card can be played as normal
-
-            # Update the state so play_card_move will process it
-            self.state = UnoStates.WAITING_FOR_PLAY
-
-            # We must bypass restrictions in this case, because the plus two may not normally be a valid move
-            self.play_card_move(player, card, True)
-
-        # Case only color matched plus twos can be stacked on plus fours
-        elif (self.ruleset.stack_color_matching_plus_twos_on_plus_fours and 
-                self.deck.top_card.face == CardFaces.PLUS_FOUR and 
-                card.face == CardFaces.PLUS_TWO and
-                self.deck.top_card.color == card.color):
-            # The card can be played as normal
-
-            # Update the state so play_card_move will process it
-            self.state = UnoStates.WAITING_FOR_PLAY
-
-            self.play_card_move(player, card)
-
-
-        # If the card is anything else, thats an InvalidCardPlayedError
-        else:
-            raise InvalidCardPlayedError
-
     def choose_color_move(self, player: Player, color: CardColors) -> None:
         """
         _summary_
@@ -348,7 +328,6 @@ class UnoGame:
         # Change state so play_card_move will process it
         self.state = UnoStates.WAITING_FOR_PLAY
         self.play_card_move(player, card)
-
 
     def process_card_state_changes(self, player: Player, card: Card):
         """
@@ -384,7 +363,6 @@ class UnoGame:
             self.state = UnoStates.WAITING_FOR_PLAY
         else:
             self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
-
 
     def start_game(self):
         """

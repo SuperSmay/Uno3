@@ -386,7 +386,7 @@ def test_draw_card_move():
     # They should only have one card that could be played on that
     assert not player_0.has_card_to_play(test_game.deck.top_card)
 
-def test_plus_response_move_no_stacking():
+def test_play_card_move_no_stacking():
 
     test_game = UnoGame()
     
@@ -418,16 +418,9 @@ def test_plus_response_move_no_stacking():
     assert test_game.current_stack == 2
 
     try:
-        # This shouldn't work. Not only is stacking off, but thats not how you do it
-        test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
-        raise AssertionError("play_card_move should've raised an OutOfTurnError")
-    except OutOfTurnError:
-        pass
-
-    try:
         # This shouldn't work because stacking is off
-        test_game.plus_response_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
-        raise AssertionError("plus_response_move should've raised an InvalidCardPlayedError")
+        test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+        raise AssertionError("play_card_move should've raised an InvalidCardPlayedError")
     except InvalidCardPlayedError:
         pass
 
@@ -481,24 +474,24 @@ def test_plus_response_basic_stacking():
 
     # Player 2 then tries (and fails because its not their turn) to stack on it
     try:
-        test_game.plus_response_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+        test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
         raise AssertionError("play_card_move should've raised an OutOfTurnError")
     except OutOfTurnError:
         pass
 
     # Player 1 then adds to the stack
-    test_game.plus_response_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
 
     assert test_game.current_stack == 4
 
     # Player 2 then adds as well
-    test_game.plus_response_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
 
     assert test_game.current_stack == 6
 
     # Player 0 tries to stack the plus four, and fails because thats not allowed right now
     try:
-        test_game.plus_response_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+        test_game.play_card_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
         raise AssertionError("play_card_move should have raised an InvalidCardPlayedError")
     except InvalidCardPlayedError:
         pass
@@ -518,7 +511,7 @@ def test_plus_response_basic_stacking():
 
     # Player 2 tries to stack, but fails because player 1 must choose a color
     try:
-        test_game.plus_response_move(player_2, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+        test_game.play_card_move(player_2, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
         raise AssertionError("play_card_move should have raised an OutOfTurnError")
     except OutOfTurnError:
         pass
@@ -528,20 +521,20 @@ def test_plus_response_basic_stacking():
     assert test_game.current_stack == 4
 
     # Now player 2 can stack
-    test_game.plus_response_move(player_2, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+    test_game.play_card_move(player_2, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
     test_game.choose_color_move(player_2, CardColors.GREEN)
 
     assert test_game.current_stack == 8
 
     # Player 0 tries to stack the plus two, and fails because thats not allowed right now
     try:
-        test_game.plus_response_move(player_0, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+        test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
         raise AssertionError("play_card_move should have raised an InvalidCardPlayedError")
     except InvalidCardPlayedError:
         pass
 
     # Player 0 then adds another plus four
-    test_game.plus_response_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+    test_game.play_card_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
     test_game.choose_color_move(player_0, CardColors.GREEN)
 
     # Player 1 accepts the stack
@@ -584,7 +577,7 @@ def test_asymmetric_plus_stacks():
     assert test_game.current_stack == 2
 
     # Player 1 then adds to the stack
-    test_game.plus_response_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+    test_game.play_card_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
 
     assert test_game.current_stack == 2
 
@@ -594,7 +587,7 @@ def test_asymmetric_plus_stacks():
     assert test_game.current_stack == 6
 
     # Player 2 then adds as well (All colors of plus two should work per current rules)
-    test_game.plus_response_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
+    test_game.play_card_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
 
     assert test_game.current_stack == 8
 
@@ -619,15 +612,15 @@ def test_asymmetric_plus_stacks():
 
     # Now player 2 tries to stack the wrong color plus two
     try:
-        test_game.plus_response_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
-        raise AssertionError("plus_response_move should have raised an InvalidCardPlayedError")
+        test_game.play_card_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
+        raise AssertionError("play_card_move should have raised an InvalidCardPlayedError")
     except InvalidCardPlayedError:
         pass
 
     assert test_game.current_stack == 4
 
     # Then does it right
-    test_game.plus_response_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
 
     assert test_game.current_stack == 6
 
