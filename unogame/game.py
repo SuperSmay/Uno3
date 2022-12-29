@@ -273,7 +273,11 @@ class UnoGame:
                     except OutOfCardsError:
                         break
 
-            self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
+                self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
+            # In draw one mode, the turn is automatically passed to the next player
+            else:
+                self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+                self.state = UnoStates.WAITING_FOR_PLAY
 
     def pass_turn_move(self, player: Player) -> None:
         """
@@ -283,14 +287,17 @@ class UnoGame:
 
         Args:
             player (Player): The player passing their turn
+
+        Raises:
+            OutOfTurnError: If it is not valid for that player to pass
         """
         if self.players[self.turn_index] != player:
             raise OutOfTurnError("Not this player's turn")
 
-        if self.state != UnoStates.WAITING_FOR_PLAY or self.state != UnoStates.WAITING_FOR_DRAW_RESPONSE:
+        if self.state != UnoStates.WAITING_FOR_PLAY and self.state != UnoStates.WAITING_FOR_DRAW_RESPONSE:
             raise OutOfTurnError("Not valid time to pass turn")
 
-        # First case where this is valid
+        # First case where this is valid, forceplay is off and the player just drew cards
         if self.state == UnoStates.WAITING_FOR_DRAW_RESPONSE and not self.ruleset.force_play:
             # If this happens, we can safely skip the other checks
             pass
