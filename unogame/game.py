@@ -166,8 +166,7 @@ class UnoGame:
         """
         The given player draws a card, or as many cards as needed to obtain a playable card,
         based on ruleset.draw_until_can_play.
-        Although this may be confusing, this function does not work to accept drawing cards from a plus card.
-        Use plus_response_move instead.
+        This is also used to accept drawing cards from a single plus card or a stack
 
         Args:
             player (Player): The player drawing cards
@@ -181,30 +180,44 @@ class UnoGame:
         if self.turn_index != self.players.index(player):
             raise OutOfTurnError
 
-        # Make sure we're waiting for them to play a card
-        if self.state != UnoStates.WAITING_FOR_PLAY:
-            raise OutOfTurnError
-
-        # Make sure that force play is not on, or if it is make sure they don't have a card to play
-        if self.ruleset.force_play and player.has_card_to_play(self.deck.top_card):
-            raise MustPlayCardError
-
-        # Now we know that this was a valid move
-       
-        # They will always draw at least one card
-        player.add_card_to_hand(self.deck.draw_card())
-         
-        # but if draw_until_can_play is on, then they might need to keep going
-        if self.ruleset.draw_until_can_play:
-            while not player.has_card_to_play(self.deck.top_card):
+        # If we're waiting for a player to accept drawing cards, then they should draw those cards here
+        elif self.state == UnoStates.WAITING_FOR_PLUS_RESPONSE:
+            for _ in range(self.current_stack):
                 try:
                     player.add_card_to_hand(self.deck.draw_card())
-                # If somehow the deck ran out of cards, than just cancel the drawing (This case will need to handled by other functions
-                # that expect the player to be able to play)
+                # If the deck somehow runs out of cards, then cancel drawing more
                 except OutOfCardsError:
                     break
 
-        self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
+            # Reset the stack and increment the turn
+            self.current_stack = 0
+            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.state = UnoStates.WAITING_FOR_PLAY
+
+        # Make sure we're waiting for them to play a card
+        elif self.state != UnoStates.WAITING_FOR_PLAY:
+            raise OutOfTurnError
+
+        # Make sure that force play is not on, or if it is make sure they don't have a card to play
+        elif self.ruleset.force_play and player.has_card_to_play(self.deck.top_card):
+            raise MustPlayCardError
+
+        # Now we know that this was a valid move and just a general draw attempt
+        else:
+            # They will always draw at least one card
+            player.add_card_to_hand(self.deck.draw_card())
+            
+            # but if draw_until_can_play is on, then they might need to keep going
+            if self.ruleset.draw_until_can_play:
+                while not player.has_card_to_play(self.deck.top_card):
+                    try:
+                        player.add_card_to_hand(self.deck.draw_card())
+                    # If somehow the deck ran out of cards, than just cancel the drawing (This case will need to handled by other functions
+                    # that expect the player to be able to play)
+                    except OutOfCardsError:
+                        break
+
+            self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
 
     def pass_turn_move(self, player: Player) -> None:
         """
@@ -238,14 +251,13 @@ class UnoGame:
 
         
 
-    def plus_response_move(self, player: Player, card: Card | None) -> None:
+    def plus_response_move(self, player: Player, card: Card) -> None:
         """
         Handles a player's response to a plus card (or a stack) being targeted at them.
-        If card is None, then the player has accepted the plus (if stacking is disabled this is the only valid response)
 
         Args:
             player (Player): The player who sent the response
-            card (Card | None): The card they sent as a response
+            card (Card): The card they sent as a response
 
         Raises:
             OutOfTurnError: It isn't this player's turn
@@ -256,20 +268,6 @@ class UnoGame:
         # Obviously if we aren't waiting for a plus response, then this is out of turn
         if self.state != UnoStates.WAITING_FOR_PLUS_RESPONSE or self.players[self.turn_index] != player:
             raise OutOfTurnError
-
-        # If card is none, then the player is accepting drawing the cards
-        if card is None:
-            for _ in range(self.current_stack):
-                try:
-                    player.add_card_to_hand(self.deck.draw_card())
-                # If the deck somehow runs out of cards, then cancel drawing more
-                except OutOfCardsError:
-                    break
-
-            # Reset the stack and increment the turn
-            self.current_stack = 0
-            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
-            self.state = UnoStates.WAITING_FOR_PLAY
 
         # If the card is a plus card that can be stacked, then the card is added to the stack and play continues
         # Keep in mind the various rules for stacking plus_twos on plus_fours

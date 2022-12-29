@@ -344,11 +344,7 @@ def test_draw_card_move():
     # Player 1 plays a plus two, so player 0 must now accept that draw and cannot use this function
     test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
 
-    try:
-        test_game.draw_card_move(player_0)
-        raise AssertionError("draw_card_move should have raised an OutOfTurnError")
-    except OutOfTurnError:
-        pass
+    test_game.draw_card_move(player_0)
 
     # Now reset the game and test multi-draw
     test_game = UnoGame()
@@ -437,13 +433,13 @@ def test_plus_response_move_no_stacking():
 
     try:
         # This shouldn't work because player 2 is not the one who needs to accept the cards
-        test_game.plus_response_move(player_2, None)
-        raise AssertionError("play_card_move should've raised an OutOfTurnError")
+        test_game.draw_card_move(player_2)
+        raise AssertionError("draw_card_move should've raised an OutOfTurnError")
     except OutOfTurnError:
         pass
 
     # This one should work
-    test_game.plus_response_move(player_1, None)
+    test_game.draw_card_move(player_1)
 
     assert test_game.current_stack == 0
     assert len(player_1.hand) == 5
@@ -510,7 +506,7 @@ def test_plus_response_basic_stacking():
     assert test_game.current_stack == 6
 
     # Player 0 accepts the stack
-    test_game.plus_response_move(player_0, None)
+    test_game.draw_card_move(player_0)
 
     assert player_0.hand.__len__() == 8
     assert test_game.current_stack == 0
@@ -549,7 +545,7 @@ def test_plus_response_basic_stacking():
     test_game.choose_color_move(player_0, CardColors.GREEN)
 
     # Player 1 accepts the stack
-    test_game.plus_response_move(player_1, None)
+    test_game.draw_card_move(player_1)
 
     assert player_1.hand.__len__() == 13
 
@@ -603,7 +599,7 @@ def test_asymmetric_plus_stacks():
     assert test_game.current_stack == 8
 
     # Player 0 accepts the stack
-    test_game.plus_response_move(player_0, None)
+    test_game.draw_card_move(player_0)
 
     assert player_0.hand.__len__() == 10
     assert test_game.current_stack == 0
@@ -636,7 +632,7 @@ def test_asymmetric_plus_stacks():
     assert test_game.current_stack == 6
 
     # Player 0 accepts the stack
-    test_game.plus_response_move(player_0, None)
+    test_game.draw_card_move(player_0)
 
     assert player_0.hand.__len__() == 16
 
@@ -684,7 +680,7 @@ def test_jump_in_stacks():
     assert test_game.current_stack == 2
 
     # Player 0 then accepts stack
-    test_game.plus_response_move(player_0, None)
+    test_game.draw_card_move(player_0)
 
     assert test_game.current_stack == 0
 
@@ -714,6 +710,6 @@ def test_jump_in_stacks():
     assert test_game.current_stack == 8
 
     # Player 1 accepts the stack
-    test_game.plus_response_move(player_1, None)
+    test_game.draw_card_move(player_1)
 
     assert len(player_1.hand) == 10
