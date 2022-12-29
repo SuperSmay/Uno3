@@ -552,3 +552,90 @@ def test_plus_response_basic_stacking():
     test_game.plus_response_move(player_1, None)
 
     assert player_1.hand.__len__() == 13
+
+def test_asymmetric_plus_stacks():
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+    player_2 = Player(2)
+
+    # All of the cards are green to make my life easier
+    player_0.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    player_2.hand = [Card(CardColors.RED, CardFaces.PLUS_TWO), Card(CardColors.RED, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    test_game.players.append(Player(0))
+    test_game.players.append(Player(1))
+    test_game.players.append(Player(2))
+    
+    test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
+
+    test_game.start_game()
+
+    # Test asymmetric stacking (plus fours -> plus twos and plus twos -> plus fours)
+    test_game.ruleset.stacking = True
+
+    test_game.ruleset.stack_all_plus_twos_on_plus_fours = True
+    test_game.ruleset.stack_color_matching_plus_twos_on_plus_fours = False
+    test_game.ruleset.stack_plus_fours_on_plus_twos = True
+    test_game.ruleset.jump_ins = False
+
+    # Player 0 starts by playing a plus two
+    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+
+    assert test_game.current_stack == 2
+
+    # Player 1 then adds to the stack
+    test_game.plus_response_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+
+    assert test_game.current_stack == 2
+
+    # Player 1 chooses a color
+    test_game.choose_color_move(player_1, CardColors.GREEN)
+
+    assert test_game.current_stack == 6
+
+    # Player 2 then adds as well (All colors of plus two should work per current rules)
+    test_game.plus_response_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
+
+    assert test_game.current_stack == 8
+
+    # Player 0 accepts the stack
+    test_game.plus_response_move(player_0, None)
+
+    assert player_0.hand.__len__() == 10
+    assert test_game.current_stack == 0
+
+    test_game.ruleset.stack_all_plus_twos_on_plus_fours = False
+    test_game.ruleset.stack_color_matching_plus_twos_on_plus_fours = True
+
+    # Player 1 starts another stack by playing a plus four
+    test_game.play_card_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+
+    assert test_game.current_stack == 0
+
+    # Then picks a color
+    test_game.choose_color_move(player_1, CardColors.GREEN)
+
+    assert test_game.current_stack == 4
+
+    # Now player 2 tries to stack the wrong color plus two
+    try:
+        test_game.plus_response_move(player_2, Card(CardColors.RED, CardFaces.PLUS_TWO))
+        raise AssertionError("plus_response_move should have raised an InvalidCardPlayedError")
+    except InvalidCardPlayedError:
+        pass
+
+    assert test_game.current_stack == 4
+
+    # Then does it right
+    test_game.plus_response_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+
+    assert test_game.current_stack == 6
+
+    # Player 0 accepts the stack
+    test_game.plus_response_move(player_0, None)
+
+    assert player_0.hand.__len__() == 16

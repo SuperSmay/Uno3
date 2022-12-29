@@ -90,7 +90,7 @@ class UnoGame:
         index = self.players.index(Player(player_id))
         return self.players[index]
 
-    def play_card_move(self, player: Player, card: Card) -> None:
+    def play_card_move(self, player: Player, card: Card, allow_mismatch_play: bool = False) -> None:
         """
         Has the player given play the card given from their hand,
         and will update game state accordingly
@@ -98,6 +98,7 @@ class UnoGame:
         Args:
             player (Player): The player who plays a card
             card (Card): The card they are playing
+            allow_mismatch_play (bool): If True, any card will count as a valid card to play on top of the top card. Only affects standard play, not jump-ins 
 
         Raises:
             OutOfTurnError: If the move was made out of turn (or an invalid jump-in card was attempted to be played)
@@ -110,10 +111,10 @@ class UnoGame:
 
         # If the game is waiting for the next move and the player who just tried to make a move was the current turn,
         # then process the play
-        if ((self.state == UnoStates.WAITING_FOR_PLAY or self.state == UnoStates.WAITING_FOR_DRAW_RESPONSE) and 
+        elif ((self.state == UnoStates.WAITING_FOR_PLAY or self.state == UnoStates.WAITING_FOR_DRAW_RESPONSE) and 
                 self.players[self.turn_index] == player):
             # Check if the card is valid in the first place
-            if not card.can_be_played(self.deck.top_card):
+            if not card.can_be_played(self.deck.top_card) and not allow_mismatch_play:
                 raise InvalidCardPlayedError
             
             # Remove the card from the player
@@ -154,26 +155,6 @@ class UnoGame:
                 # Reset the stack if jump-ins are supposed to clear the stack
                 self.current_stack = 0
 
-
-            self.process_card_state_changes(player, card)
-
-        # If we weren't waiting for a normal play and it wasn't a valid jump-in, then check for wild colors
-        elif (self.state == UnoStates.WAITING_FOR_WILD_COLOR and 
-                self.players.index(player) == self.turn_index and 
-                # Make sure the type of card being played matches the top card
-                self.deck.top_card.face == card.face and
-                # And that the card being played isn't wild itself
-                card.color != CardColors.WILD):
-            # Do wild color stuff
-            # In this case, the cards that would make it here are colored wilds and colored plus fours
-            # Those can be properly handled by process_standard_card_play, so we proceed normally
-
-            # Note that the card is never attempted to be removed from the player,
-            # because the player shouldn't have that card anyway
-
-            # Return card to deck (This function will ensure that the colored cards do not end up back in the discard pile
-            # if they are properly marked for such)
-            self.deck.play_card(card)
 
             self.process_card_state_changes(player, card)
         
@@ -326,7 +307,8 @@ class UnoGame:
             # Update the state so play_card_move will process it
             self.state = UnoStates.WAITING_FOR_PLAY
 
-            self.play_card_move(player, card)
+            # We must bypass restrictions in this case, because the plus two may not normally be a valid move
+            self.play_card_move(player, card, True)
 
         # Case only color matched plus twos can be stacked on plus fours
         elif (self.ruleset.stack_color_matching_plus_twos_on_plus_fours and 
