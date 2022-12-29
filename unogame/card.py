@@ -79,8 +79,8 @@ class Card:
         if self.color == other_card.color and self.face == other_card.face:
             return True
 
-        # If the face is wild or plus_four and matches, then we good
-        if (self.face == CardFaces.WILD or self.face == CardFaces.PLUS_FOUR) and self.face == other_card.face:
+        # If the card is wild and the face matches, then we good
+        if (self.color == CardColors.WILD) and self.face == other_card.face:
             return True
 
         # Otherwise, they don't match

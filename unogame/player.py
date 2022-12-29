@@ -28,14 +28,18 @@ class Player:
 
     def play_card(self, card: Card) -> bool:
         """
-        Removes the card provided from the players hand
+        Removes the card provided from the players hand.
+        If `card.return_to_discard == False`, then this function will always return true and do nothing.
 
         Args:
             card (Card): The card to remove
 
         Returns:
-            bool: True if the player had the card, False otherwise
+            bool: True if the player had the card or `card.return_to_discard == False`, False otherwise
         """
+
+        if not card.return_to_discard:
+            return True
 
         if card not in self.hand:
             return False

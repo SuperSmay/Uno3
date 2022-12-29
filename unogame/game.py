@@ -267,13 +267,13 @@ class UnoGame:
             card (Card | None): The card they sent as a response
 
         Raises:
-            OutOfTurnError: _description_
-            InvalidCardPlayedError: _description_
-            InvalidCardPlayedError: _description_
+            OutOfTurnError: It isn't this player's turn
+            InvalidCardPlayedError: Stacking is off and the player tried to stack
+            PlayerDoesNotHaveCardError: The play was valid, but the player did not have the card they attempted to play
         """
 
         # Obviously if we aren't waiting for a plus response, then this is out of turn
-        if self.state != UnoStates.WAITING_FOR_PLUS_RESPONSE:
+        if self.state != UnoStates.WAITING_FOR_PLUS_RESPONSE or self.players[self.turn_index] != player:
             raise OutOfTurnError
 
         # If card is none, then the player is accepting drawing the cards
@@ -285,6 +285,11 @@ class UnoGame:
                 except OutOfCardsError:
                     break
 
+            # Reset the stack and increment the turn
+            self.current_stack = 0
+            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.state = UnoStates.WAITING_FOR_PLAY
+
         # If the card is a plus card that can be stacked, then the card is added to the stack and play continues
         # Keep in mind the various rules for stacking plus_twos on plus_fours
 
@@ -295,6 +300,10 @@ class UnoGame:
         # Case standard stack
         elif self.deck.top_card.face == card.face:
             # The card can be played as normal
+
+            # Update the state so play_card_move will process it
+            self.state = UnoStates.WAITING_FOR_PLAY
+
             self.play_card_move(player, card)
 
         # Case plus fours can be stacked on plus twos
@@ -302,6 +311,10 @@ class UnoGame:
                 self.deck.top_card.face == CardFaces.PLUS_TWO and 
                 card.face == CardFaces.PLUS_FOUR):
             # The card can be played as normal
+
+            # Update the state so play_card_move will process it
+            self.state = UnoStates.WAITING_FOR_PLAY
+
             self.play_card_move(player, card)
 
         # Case plus twos can always be stacked on plus fours
@@ -309,6 +322,10 @@ class UnoGame:
                 self.deck.top_card.face == CardFaces.PLUS_FOUR and 
                 card.face == CardFaces.PLUS_TWO):
             # The card can be played as normal
+
+            # Update the state so play_card_move will process it
+            self.state = UnoStates.WAITING_FOR_PLAY
+
             self.play_card_move(player, card)
 
         # Case only color matched plus twos can be stacked on plus fours
@@ -317,12 +334,41 @@ class UnoGame:
                 card.face == CardFaces.PLUS_TWO and
                 self.deck.top_card.color == card.color):
             # The card can be played as normal
+
+            # Update the state so play_card_move will process it
+            self.state = UnoStates.WAITING_FOR_PLAY
+
             self.play_card_move(player, card)
 
 
         # If the card is anything else, thats an InvalidCardPlayedError
         else:
             raise InvalidCardPlayedError
+
+    def choose_color_move(self, player: Player, color: CardColors) -> None:
+        """
+        _summary_
+
+        Args:
+            player (Player): _description_
+            card (Card): _description_
+
+        Raises:
+            OutOfTurnError: _description_
+            InvalidCardPlayedError: _description_
+        """
+
+        # If we aren't waiting for a color or it isn't this player's turn
+        if self.state != UnoStates.WAITING_FOR_WILD_COLOR or self.players[self.turn_index] != player:
+            raise OutOfTurnError
+        
+        card = Card(color, self.deck.top_card.face)
+        # This is a temp card to show the color and do potential plus card processing. Do not store it in discard pile
+        card.return_to_discard = False
+        # Change state so play_card_move will process it
+        self.state = UnoStates.WAITING_FOR_PLAY
+        self.play_card_move(player, card)
+
 
     def process_card_state_changes(self, player: Player, card: Card):
         """
