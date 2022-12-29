@@ -331,17 +331,10 @@ def test_draw_card_move():
 
     assert player_0.hand.__len__() == 3
 
-    # They shouldn't be able to draw twice
-    try:
-        test_game.draw_card_move(player_0)
-        raise AssertionError("draw_card_move should have raised an OutOfTurnError")
-    except OutOfTurnError:
-        pass
+    # Their turn should now be over
+    assert test_game.turn_index == 1
 
-    # Now they can play a card and finish their turn
-    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.EIGHT))
-
-    # Player 1 plays a plus two, so player 0 must now accept that draw and cannot use this function
+    # Player 1 plays a plus two, so player 0 must now accept that draw
     test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
 
     test_game.draw_card_move(player_0)
@@ -376,6 +369,13 @@ def test_draw_card_move():
 
     # They should have drawn a card that they can play
     assert player_0.has_card_to_play(test_game.deck.top_card)
+
+    # They shouldn't be able to draw twice
+    try:
+        test_game.draw_card_move(player_0)
+        raise AssertionError("draw_card_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
 
     # The last card they drew should be the one they can play
     test_game.play_card_move(player_0, player_0.hand[-1])
@@ -706,3 +706,48 @@ def test_jump_in_stacks():
     test_game.draw_card_move(player_1)
 
     assert len(player_1.hand) == 10
+
+def test_pass_move():
+
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+
+    player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.EIGHT)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
+
+    test_game.players.append(Player(0))
+    test_game.players.append(Player(1))
+    
+    test_game.deck.top_card = Card(CardColors.YELLOW, CardFaces.SIX)
+
+    test_game.start_game()
+
+    test_game.ruleset.draw_until_can_play = True
+    test_game.ruleset.force_play = True
+
+    # You cannot pass before drawing cards
+    try:
+        test_game.pass_turn_move(player_0)
+        raise AssertionError("pass_turn_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    test_game.draw_card_move(player_0)
+
+    # Because forceplay and draw_until_can_play are on, it doesn't matter if they can play or not after drawing. Player 0 should not be able to pass
+    try:
+        test_game.pass_turn_move(player_0)
+        raise AssertionError("pass_turn_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    # Then disable forceplay and check that the player can pass now
+    test_game.ruleset.force_play = False
+
+    test_game.pass_turn_move(player_0)
+
+    assert test_game.turn_index == 1
+
