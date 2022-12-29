@@ -75,6 +75,10 @@ class Card:
             bool: If the card can be jumped in with
         """
 
+        # If the top card is wild, then it cannot be jumped in on (this is mostly because of plus four issues)
+        if other_card.color == CardColors.WILD:
+            return False
+
         # If the colors and faces match, then we good
         if self.color == other_card.color and self.face == other_card.face:
             return True

@@ -639,3 +639,81 @@ def test_asymmetric_plus_stacks():
     test_game.plus_response_move(player_0, None)
 
     assert player_0.hand.__len__() == 16
+
+def test_jump_in_stacks():
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+    player_2 = Player(2)
+
+    # All of the cards are green to make my life easier
+    player_0.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR),]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    test_game.players.append(Player(0))
+    test_game.players.append(Player(1))
+    test_game.players.append(Player(2))
+    
+    test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
+
+    test_game.start_game()
+
+    # Test jump-in stacking (plus fours -> plus fours and plus twos -> plus twos)
+    test_game.ruleset.stacking = True
+    test_game.ruleset.jump_ins = True
+
+    test_game.ruleset.stack_all_plus_twos_on_plus_fours = False
+    test_game.ruleset.stack_color_matching_plus_twos_on_plus_fours = False
+    test_game.ruleset.stack_plus_fours_on_plus_twos = False
+
+    # First test that the stack clears after jump-ins
+    test_game.ruleset.jump_ins_stack = False
+
+    # Player 0 starts by playing a plus two
+    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+
+    assert test_game.current_stack == 2
+
+    # Player 2 then jumps in
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.PLUS_TWO))
+
+    # Stack should have cleared
+    assert test_game.current_stack == 2
+
+    # Player 0 then accepts stack
+    test_game.plus_response_move(player_0, None)
+
+    assert test_game.current_stack == 0
+
+    # Now jump-ins preserve the stack
+    test_game.ruleset.jump_ins_stack = True
+
+    # Player 1 starts another stack by playing a plus four
+    test_game.play_card_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+
+    assert test_game.current_stack == 0
+
+    # Player 0 tries to jump-in, but fails because player 1 must choose a color
+    try:
+        test_game.play_card_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+        raise AssertionError("play_card_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
+
+    test_game.choose_color_move(player_1, CardColors.GREEN)
+
+    assert test_game.current_stack == 4
+
+    # Now player 0 can jump-in stack
+    test_game.play_card_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
+    test_game.choose_color_move(player_0, CardColors.GREEN)
+
+    assert test_game.current_stack == 8
+
+    # Player 1 accepts the stack
+    test_game.plus_response_move(player_1, None)
+
+    assert len(player_1.hand) == 10
