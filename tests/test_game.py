@@ -82,9 +82,9 @@ def test_basic_play_card_move():
     player_1.hand = [Card(CardColors.RED, CardFaces.FOUR), Card(CardColors.BLUE, CardFaces.NINE)]
     player_2.hand = [Card(CardColors.BLUE, CardFaces.EIGHT), Card(CardColors.BLUE, CardFaces.FIVE)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.YELLOW, CardFaces.EIGHT)
 
@@ -147,9 +147,9 @@ def test_jump_ins():
     player_1.hand = [Card(CardColors.RED, CardFaces.FOUR), Card(CardColors.BLUE, CardFaces.NINE)]
     player_2.hand = [Card(CardColors.BLUE, CardFaces.EIGHT), Card(CardColors.BLUE, CardFaces.FIVE)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.BLUE, CardFaces.EIGHT)
 
@@ -205,9 +205,9 @@ def test_reverse_skip_cards():
     player_1.hand = [Card(CardColors.GREEN, CardFaces.SKIP), Card(CardColors.GREEN, CardFaces.NINE)]
     player_2.hand = [Card(CardColors.GREEN, CardFaces.SKIP), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.NINE)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -267,8 +267,8 @@ def test_reverse_skip_cards():
     player_0.hand = [Card(CardColors.GREEN, CardFaces.SKIP), Card(CardColors.GREEN, CardFaces.REVERSE), Card(CardColors.GREEN, CardFaces.EIGHT)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.SKIP), Card(CardColors.GREEN, CardFaces.NINE)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -305,8 +305,8 @@ def test_draw_card_move():
     player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.EIGHT)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -351,8 +351,8 @@ def test_draw_card_move():
     player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.BLUE, CardFaces.NINE)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -400,9 +400,9 @@ def test_play_card_move_no_stacking():
     player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR),]
     player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -451,9 +451,9 @@ def test_plus_response_basic_stacking():
     player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR),]
     player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -555,9 +555,9 @@ def test_asymmetric_plus_stacks():
     player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
     player_2.hand = [Card(CardColors.RED, CardFaces.PLUS_TWO), Card(CardColors.RED, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -642,9 +642,9 @@ def test_jump_in_stacks():
     player_1.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR),]
     player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
-    test_game.players.append(Player(2))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
     
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
@@ -718,8 +718,8 @@ def test_pass_move():
     player_0.hand = [Card(CardColors.RED, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.EIGHT)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
 
-    test_game.players.append(Player(0))
-    test_game.players.append(Player(1))
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
     
     test_game.deck.top_card = Card(CardColors.YELLOW, CardFaces.SIX)
 
@@ -751,3 +751,154 @@ def test_pass_move():
 
     assert test_game.turn_index == 1
 
+def test_zero_rotate():
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+    player_2 = Player(2)
+
+    player_0.hand = [Card(CardColors.RED, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
+    
+    test_game.deck.top_card = Card(CardColors.RED, CardFaces.SIX)
+
+    test_game.start_game()
+
+    test_game.ruleset.zero_rotate_hands = True
+    test_game.ruleset.force_zero_rotate = True
+
+    # Can't make a rotate happen yet
+    try:
+        test_game.zero_rotate_move(player_0, True)
+        raise AssertionError("zero_rotate_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    test_game.play_card_move(player_0, Card(CardColors.RED, CardFaces.ZERO))
+
+    # You cannot deny the rotate if force_zero_rotate is on
+    try:
+        test_game.zero_rotate_move(player_0, False)
+        raise AssertionError("zero_rotate_move should have raised an ValueError")
+    except ValueError:
+        pass 
+
+    # Wrong player
+    try:
+        test_game.zero_rotate_move(player_1, True)
+        raise AssertionError("zero_rotate_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    # Do it right
+    test_game.zero_rotate_move(player_0, True)
+
+    # Make sure it worked
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+
+    # Now make it optional 
+    test_game.ruleset.force_zero_rotate = False
+
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.ZERO))
+    # This should be optional now
+    test_game.zero_rotate_move(player_1, False)
+
+    # Make sure nothing changed
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.REVERSE))
+
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.ZERO))
+
+    test_game.zero_rotate_move(player_1, True)
+
+    # Make sure reverse worked
+    assert player_0.hand == [Card(CardColors.YELLOW, CardFaces.FIVE)]
+    assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+def test_seven_swap():
+    test_game = UnoGame()
+    
+    # Manually add players to set up a specific game state
+    player_0 = Player(0)
+    player_1 = Player(1)
+    player_2 = Player(2)
+
+    player_0.hand = [Card(CardColors.RED, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    test_game.players.append(player_0)
+    test_game.players.append(player_1)
+    test_game.players.append(player_2)
+    
+    test_game.deck.top_card = Card(CardColors.RED, CardFaces.SIX)
+
+    test_game.start_game()
+
+    test_game.ruleset.seven_swap_hands = True
+    test_game.ruleset.force_seven_swap = True
+
+    # Can't make a swap happen yet
+    try:
+        test_game.seven_swap_move(player_0, 1)
+        raise AssertionError("seven_swap_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    test_game.play_card_move(player_0, Card(CardColors.RED, CardFaces.SEVEN))
+
+    # You cannot deny the swap if force_seven_swap is on
+    try:
+        test_game.seven_swap_move(player_0, 0)
+        raise AssertionError("seven_swap_move should have raised an ValueError")
+    except ValueError:
+        pass 
+
+    # Wrong player
+    try:
+        test_game.seven_swap_move(player_1, 2)
+        raise AssertionError("seven_swap_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
+
+    # Invalid index
+    try:
+        test_game.seven_swap_move(player_0, 9)
+        raise AssertionError("seven_swap_move should have raised an IndexError")
+    except IndexError:
+        pass 
+
+    # Do it right
+    test_game.seven_swap_move(player_0, 1)
+
+    # Make sure it worked
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+    assert player_1.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    # Now make it optional 
+    test_game.ruleset.force_seven_swap = False
+
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.SEVEN))
+    # This should be optional now
+    test_game.seven_swap_move(player_1, 1)
+
+    # Make sure nothing changed
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
+    assert player_1.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    #TODO jump in cancels swap rules

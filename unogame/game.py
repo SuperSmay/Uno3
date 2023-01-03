@@ -368,8 +368,106 @@ class UnoGame:
             else:
                 self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
             self.state = UnoStates.WAITING_FOR_PLAY
+        elif card.face == CardFaces.ZERO and self.ruleset.zero_rotate_hands:
+            self.state = UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE
+        elif card.face == CardFaces.SEVEN and self.ruleset.seven_swap_hands:
+            self.state = UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP
         else:
             self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+
+    def seven_swap_move(self, player: Player, player_index: int):
+        """
+        Represents a player picking a another player to swap hands with.
+        If `player_index` is that player's own index then they are picking nobody, may or may not be allowed based on current rules.
+
+        Args:
+            player (Player): The player picking
+            player_index (int): The index of the picked player
+
+        Raises:
+            OutOfTurnError: If it is not this players turn or the game is not waiting for this
+            ValueError: If the index is the index of the player making the move and force_seven_swap is on
+            IndexError: The index is out of range 
+        """
+
+        # Can only do this while the game is waiting for someone to pick a player, and that player is the player provided
+        if self.state != UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP or self.players[self.turn_index] != player:
+            raise OutOfTurnError
+        
+        # Can only pick yourself if force_seven_swap is False
+        elif self.ruleset.force_seven_swap and self.players[player_index] == player:
+            raise ValueError("Index must not be the index of player")
+
+        # Index obviously needs to be in the list of players
+        elif player_index < 0 or player_index >= len(self.players):
+            raise IndexError("Index must be a valid index in self.players")
+
+        # Also if this somehow happens with only one player, then move on
+        elif len(self.players) < 2:
+            pass
+
+        # Now that we know this is valid, do the thing
+        else:
+            temp = player.hand
+            player.hand = self.players[player_index].hand
+            self.players[player_index].hand = temp
+
+        self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+        self.state = UnoStates.WAITING_FOR_PLAY
+
+    def zero_rotate_move(self, player: Player, choose_to_rotate: bool):
+        """
+        Represents a player choosing to rotate all hands or not.
+        If `choose_to_rotate` is False, the rotate will not happen. This may or may not be valid based on current rules.
+
+        Args:
+            player (Player): The player picking
+            choose_to_rotate (bool): The choice of the player to rotate or not
+
+        Raises:
+            OutOfTurnError: If it is not this players turn or the game is not waiting for this
+            ValueError: If the choice is False and force_zero_rotate is on
+        """
+
+        # Can only do this while the game is waiting for someone to pick a player, and that player is the player provided
+        if self.state != UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE or self.players[self.turn_index] != player:
+            raise OutOfTurnError
+        
+        # Can only pick false if force_zero_rotate is False
+        if self.ruleset.force_zero_rotate and not choose_to_rotate:
+            raise ValueError("choose_to_rotate must be False because force_zero_rotate is on")
+
+        # Now that we know this is valid, do the thing
+        if choose_to_rotate:
+
+            # If the number of players is one or less(???) then don't even try
+            if len(self.players) < 2:
+                pass
+                
+            # Reversed direction
+            elif self.reversed:
+                first_player_hand = self.players[0].hand
+
+                for i in range(len(self.players) - 1):
+                    self.players[i].hand = self.players[i+1].hand
+                
+                self.players[-1].hand = first_player_hand
+                
+
+            # Normal direction
+            else:
+                last_player_hand = self.players[-1].hand
+                
+                for i in range(len(self.players)-1, -1, -1):
+                    self.players[i].hand = self.players[i-1].hand
+                
+                self.players[0].hand = last_player_hand
+
+        self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+        self.state = UnoStates.WAITING_FOR_PLAY
+
+
+        
 
     def start_game(self):
         """
@@ -397,15 +495,17 @@ class UnoRules:
     seven_swap_hands = False
     force_seven_swap = False
     zero_rotate_hands = False
+    force_zero_rotate = False
 
 class UnoStates(Enum):
     PREGAME = 0
     WAITING_FOR_PLAY = 1
     WAITING_FOR_PLUS_RESPONSE = 2
     WAITING_FOR_WILD_COLOR = 3
-    WAITING_FOR_PICK_PLAYER = 4
-    WAITING_FOR_DRAW_RESPONSE = 5
-    PLAYER_WON = 6
+    WAITING_FOR_PICK_PLAYER_TO_SWAP = 4
+    WAITING_FOR_CHOOSE_TO_ROTATE = 5
+    WAITING_FOR_DRAW_RESPONSE = 6
+    PLAYER_WON = 7
 
 class OutOfTurnError(Exception): pass
 class PlayerDoesNotHaveCardError(Exception): pass
