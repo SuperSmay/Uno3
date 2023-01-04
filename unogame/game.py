@@ -109,6 +109,13 @@ class UnoGame:
         if self.state == UnoStates.PREGAME or self.state == UnoStates.PLAYER_WON:
             raise OutOfTurnError
 
+        # Can't play a card during a seven/zero if the rules are set to not allow jump-ins during those
+        # This is only to stop jump-ins during those cases
+        elif self.state == UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP and not self.ruleset.jump_in_during_seven:
+            raise OutOfTurnError
+        elif self.state == UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE and not self.ruleset.jump_in_during_zero:
+            raise OutOfTurnError
+
         # If the game is waiting for the next move and the player who just tried to make a move was the current turn,
         # then process the play
         elif ((self.state == UnoStates.WAITING_FOR_PLAY or self.state == UnoStates.WAITING_FOR_DRAW_RESPONSE) and 
@@ -187,7 +194,7 @@ class UnoGame:
                 raise InvalidCardPlayedError
 
         # Otherwise, if the card is a jump-in (and the jump-in rule is enabled), then its always* valid
-        # *not valid if the game hasn't started
+        # *not valid if the game hasn't started, or depending on jump_in_during_seven/zero rules
         elif card.can_be_jumped_in(self.deck.top_card) and self.ruleset.jump_ins:
             # Do the jump-in stuff
             # Start by updating turn_index to the index of whoever jumped in
@@ -492,10 +499,14 @@ class UnoRules:
     
     force_play = True
     draw_until_can_play = True
+
+    # 7-0
     seven_swap_hands = False
     force_seven_swap = False
     zero_rotate_hands = False
     force_zero_rotate = False
+    jump_in_during_seven = False
+    jump_in_during_zero = False
 
 class UnoStates(Enum):
     PREGAME = 0

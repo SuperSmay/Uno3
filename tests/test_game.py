@@ -761,7 +761,7 @@ def test_zero_rotate():
 
     player_0.hand = [Card(CardColors.RED, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
-    player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
     test_game.players.append(player_0)
     test_game.players.append(player_1)
@@ -801,7 +801,7 @@ def test_zero_rotate():
     test_game.zero_rotate_move(player_0, True)
 
     # Make sure it worked
-    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
     assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
     assert player_2.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
 
@@ -813,7 +813,7 @@ def test_zero_rotate():
     test_game.zero_rotate_move(player_1, False)
 
     # Make sure nothing changed
-    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
     assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.YELLOW, CardFaces.FIVE)]
     assert player_2.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
 
@@ -826,7 +826,43 @@ def test_zero_rotate():
     # Make sure reverse worked
     assert player_0.hand == [Card(CardColors.YELLOW, CardFaces.FIVE)]
     assert player_1.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO)]
-    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+
+    # Move index for the sake of this test being easier to write :D
+    test_game.turn_index = 2
+    test_game.reversed = False
+
+    # Make sure nothing happens if zero rule is off
+    test_game.ruleset.zero_rotate_hands = False
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.ZERO))
+
+    assert test_game.state == UnoStates.WAITING_FOR_PLAY
+
+    # Turn that back on
+    test_game.ruleset.zero_rotate_hands = True
+
+    # Reset hands to test jump-ins
+    player_0.hand = [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO), Card(CardColors.GREEN, CardFaces.ZERO)]
+
+    # First, the jump-ins can cancel zeros
+    test_game.ruleset.jump_in_during_zero = True
+    test_game.ruleset.jump_ins = True
+
+    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.ZERO))
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.ZERO))
+
+    assert test_game.state == UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE
+    assert test_game.turn_index == 1
+
+    # Now they can't
+    test_game.ruleset.jump_in_during_zero = False
+    try:
+        test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.ZERO))
+        raise AssertionError("seven_swap_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
 
 def test_seven_swap():
     test_game = UnoGame()
@@ -838,7 +874,7 @@ def test_seven_swap():
 
     player_0.hand = [Card(CardColors.RED, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
     player_1.hand = [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
-    player_2.hand = [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
     test_game.players.append(player_0)
     test_game.players.append(player_1)
@@ -887,7 +923,7 @@ def test_seven_swap():
     # Make sure it worked
     assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
     assert player_1.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
-    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
     # Now make it optional 
     test_game.ruleset.force_seven_swap = False
@@ -899,6 +935,36 @@ def test_seven_swap():
     # Make sure nothing changed
     assert player_0.hand == [Card(CardColors.GREEN, CardFaces.ONE), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.REVERSE)]
     assert player_1.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.YELLOW, CardFaces.FIVE)]
-    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
+    assert player_2.hand == [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.PLUS_TWO), Card(CardColors.WILD, CardFaces.PLUS_FOUR)]
 
-    #TODO jump in cancels swap rules
+    # Make sure nothing happens if seven rule is off
+    test_game.ruleset.seven_swap_hands = False
+    test_game.play_card_move(player_2, Card(CardColors.GREEN, CardFaces.SEVEN))
+
+    assert test_game.state == UnoStates.WAITING_FOR_PLAY
+
+    # Turn that back on
+    test_game.ruleset.seven_swap_hands = True
+
+    # Reset hands to test jump-ins
+    player_0.hand = [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN)]
+    player_1.hand = [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN)]
+    player_2.hand = [Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN), Card(CardColors.GREEN, CardFaces.SEVEN)]
+
+    # First, the jump-ins can cancel sevens
+    test_game.ruleset.jump_in_during_seven = True
+    test_game.ruleset.jump_ins = True
+
+    test_game.play_card_move(player_0, Card(CardColors.GREEN, CardFaces.SEVEN))
+    test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.SEVEN))
+
+    assert test_game.state == UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP
+    assert test_game.turn_index == 1
+
+    # Now they can't
+    test_game.ruleset.jump_in_during_seven = False
+    try:
+        test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.SEVEN))
+        raise AssertionError("seven_swap_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass 
