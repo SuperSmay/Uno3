@@ -1,6 +1,12 @@
 from unogame.card import *
 
 def test_constructor():
+    """
+    Tests that the constructor for Card works as expected
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_card = Card(CardColors.GREEN, CardFaces.REVERSE)
 
@@ -8,17 +14,38 @@ def test_constructor():
 
     assert test_card.face == CardFaces.REVERSE
 
+
 def test_get_emoji_mention():
+    """
+    Tests that Card.get_emoji_mention returns the correct emoji mention for a card
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_card = Card(CardColors.BLUE, CardFaces.PLUS_TWO)
     assert test_card.get_emoji_mention() == "<:plus2_blue:736430793815097416>"
 
+
 def test_get_image_url():
+    """
+    Tests that Card.get_image_url returns the correct discord cdn image for a card
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
     
     test_card = Card(CardColors.GREEN, CardFaces.FIVE)
     assert test_card.get_image_url() == "https://cdn.discordapp.com/attachments/742986384113008712/742986667438112869/Background_47.png"
 
+
 def test_can_be_played():
+    """
+    Tests that Card.can_be_played returns the correct value
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_top_card = Card(CardColors.YELLOW, CardFaces.THREE)
 
@@ -42,8 +69,15 @@ def test_can_be_played():
     assert test_card_four.can_be_played(test_top_card)
 
     assert not test_card_five.can_be_played(test_top_card)
+    
 
 def test_can_be_jumped_in():
+    """
+    Tests that Card.can_be_jumped_in returns the correct value
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_top_card = Card(CardColors.YELLOW, CardFaces.THREE)
 

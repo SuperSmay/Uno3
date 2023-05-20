@@ -20,7 +20,7 @@ class DeckManager:
 
         self.discard_pile: list[Card] = []
 
-        self.top_card: Card = self.get_starting_card()
+        self.top_card: Card = self.draw_starting_card()
 
     def create_deck(self) -> list[Card]:
         """
@@ -72,7 +72,8 @@ class DeckManager:
 
     def play_card(self, card: Card) -> None:
         """
-        Sets the top card to the provided card and adds the previous top card to the discard pile
+        Sets the top card to the provided card and adds the previous top card to the discard pile.
+        Does not check if the card played is valid in the context of an Uno game
 
         Args:
             card (Card): Card to play
@@ -82,7 +83,7 @@ class DeckManager:
             self.discard_pile.append(self.top_card)
         self.top_card = card
 
-    def get_starting_card(self) -> Card:
+    def draw_starting_card(self) -> Card:
         """
         Draws cards until a card that is a valid starting card (anything non wild) is drawn
 

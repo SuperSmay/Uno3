@@ -4,6 +4,12 @@ from unogame.card import Card, CardColors, CardFaces
 from unogame.deck import DeckManager
 
 def test_constructor():
+    """
+    Tests that the constructor for UnoGame works as expected
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
      
     test_game = UnoGame()
 
@@ -12,41 +18,57 @@ def test_constructor():
     assert test_game.ruleset == UnoRules()
     assert test_game.state == UnoStates.PREGAME
 
-def test_add_player():
+
+def test_create_player():
+    """
+    Tests that UnoGame.create_player adds a player correctly
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
-    test_game.add_player(0)
+    # Should add a new player with an ID of 0
+    test_game.create_player(0)
 
     assert test_game.players == [Player(0)]
 
     assert test_game.players[0].hand.__len__() == test_game.ruleset.starting_hand_size
 
-    test_game.add_player(1)
-    test_game.add_player(2)
+    test_game.create_player(1)
+    test_game.create_player(2)
 
     assert test_game.players.__len__() == 3
 
     # This shouldn't work because we've already used this ID
     try:
-        test_game.add_player(2)
+        test_game.create_player(2)
         raise AssertionError("add_player should've thrown a ValueError")
     except ValueError as e:
         pass
 
+
 def test_remove_player():
+    """
+    Tests that UnoGame.remove_player works as expected
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
-    test_game.add_player(0)
-    test_game.add_player(1)
-    test_game.add_player(2)
+    test_game.create_player(0)
+    test_game.create_player(1)
+    test_game.create_player(2)
 
     test_game.remove_player(0)
 
     # This is what we should have now
     assert test_game.players == [Player(1), Player(2)]
 
+    # This shouldn't work because there is no player with ID 0
     try:
         test_game.remove_player(0)
         raise AssertionError("remove_player should've thrown a ValueError")
@@ -59,17 +81,36 @@ def test_remove_player():
     # Make sure all the cards ended up back in the deck
     assert len(test_game.deck) == 107 # Not 108 because a card was taken for starting card
 
+
 def test_get_player():
+    """
+    Tests that UnoGame.get_player returns the correct player
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
 
-    test_game.add_player(0)
-    test_game.add_player(1)
-    test_game.add_player(2)
+    test_game.create_player(0)
+    test_game.create_player(1)
+    test_game.create_player(2)
 
-    assert test_game.get_player(1) == Player(1)
+    # Manually get the player with ID 1 from the list of players (Thanks https://stackoverflow.com/a/2364277)
+    player = next(player for player in test_game.players if player.player_id == 1)
+    assert test_game.get_player(1) == player
+
 
 def test_basic_play_card_move():
+    """
+    Tests that UnoGame.play_card_move works in basic cases, and that the game state is updating correctly.
+    Also tests when players are allowed to play cards (again, not including jump-ins).
+    Does not cover jump-ins, special cards like reverses, skips, plus cards, and wilds.
+
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -135,6 +176,14 @@ def test_basic_play_card_move():
     # This concludes the tests for the simple card playing stuff
 
 def test_jump_ins():
+    """
+    Tests that basic jump-ins work correctly, and that game state is updated accordingly.
+    Also tests when players are allowed to jump-in
+    Does not include special cards like reverses, plus cards, etc.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -191,6 +240,13 @@ def test_jump_ins():
     # This concludes the testing for simple jump-ins
 
 def test_reverse_skip_cards():
+    """
+    Tests that reverse and skip cards work as expected, including jump-ins and 1v1s.
+    Does not test the basic mechanics of playing a card, as those are covered in test_basic_play_card_move.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -295,6 +351,13 @@ def test_reverse_skip_cards():
     assert test_game.reversed
 
 def test_draw_card_move():
+    """
+    Test that a draw card move works as expected, and that game state is updated accordingly.
+    Also tests when players are allowed to draw a card, and how many cards they draw.
+
+    Raises:
+        AssertionError: If a test fails
+    """
 
     test_game = UnoGame()
     
@@ -339,7 +402,10 @@ def test_draw_card_move():
 
     test_game.draw_card_move(player_0)
 
+    assert player_0.hand.__len__() == 5
+
     # Now reset the game and test multi-draw
+    # This test is not great because it could occasionally pass due to RNG but its good enough
     test_game = UnoGame()
     
     # Manually add players to set up a specific game state
@@ -367,6 +433,33 @@ def test_draw_card_move():
     # Player 0 has no valid moves, so they draw
     test_game.draw_card_move(player_0)
 
+    # If they only drew one card, that could have been a random single card draw that succeeded, so we try again
+    while player_0.hand.__len__() == 3:
+        # Remove the last card the player drew
+        player_0.hand.pop()
+        # Reset the turn
+        test_game.turn_index = 0
+        test_game.state = UnoStates.WAITING_FOR_PLAY
+        # Try again
+        test_game.draw_card_move(player_0)
+
+        if len(test_game.deck.draw_pile) == 0:
+            # Oops we ran out of cards.
+            # Either the test failed because draw_card_move only drew one card even with draw_until_can_play set to True,
+            # or because it got incredibly unlucky (lucky?) and drew all the valid cards one after the other until it ran out of valid cards.
+
+            # If the player has three cards and the deck is out of cards, then it definitely just kept drawing one, 
+            # because it should have stopped drawing when a valid card was found instead of just drawing one at a time,
+            # and would have drawn all of the rest of the deck (more than three cards) if it just got unlucky
+            if len(player_0.hand) == 3:
+                raise AssertionError("draw_card_move only drew one card until the deck ran out of cards")
+            
+            # At this point I think its fair to pass the test. All valid cards were drawn one at a time, and after the last valid card was gone,
+            # it drew the rest of the deck.
+            player_0.add_card_to_hand(Card(CardColors.GREEN, CardFaces.EIGHT))
+            break
+
+
     # They should have drawn a card that they can play
     assert player_0.has_card_to_play(test_game.deck.top_card)
 
@@ -377,16 +470,29 @@ def test_draw_card_move():
     except OutOfTurnError:
         pass
 
+    assert test_game.state == UnoStates.WAITING_FOR_DRAW_RESPONSE
+
     # The last card they drew should be the one they can play
     test_game.play_card_move(player_0, player_0.hand[-1])
 
     # Reset the top card to what it was before
     test_game.deck.top_card = Card(CardColors.GREEN, CardFaces.EIGHT)
 
-    # They should only have one card that could be played on that
+    # They should only have one card that could be played on that, and they just played it
     assert not player_0.has_card_to_play(test_game.deck.top_card)
 
+
 def test_play_card_move_no_stacking():
+    """
+    Tests that plus 2 cards work as expected when stacking is off.
+    Also tests that players draw the right number of cards.
+    Does not test plus 4s.
+    Does not test jump-ins.
+    Does not test the basic mechanics of playing a card, as those are covered in test_basic_play_card_move.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -437,7 +543,15 @@ def test_play_card_move_no_stacking():
     assert test_game.current_stack == 0
     assert len(player_1.hand) == 5
 
+
 def test_plus_response_basic_stacking():
+    """
+    Tests that plus cards work with stacking correctly.
+    Also tests that choose_color_move works correctly.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -516,7 +630,29 @@ def test_plus_response_basic_stacking():
     except OutOfTurnError:
         pass
 
+    # Player 2 then tries to choose a color, but fails because player 1 must choose a color
+    try:
+        test_game.choose_color_move(player_2, CardColors.BLUE)
+        raise AssertionError("choose_color_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
+
+    # Player 1 then tries to choose a color, but fails because CardColors.WILD is not a valid color choice
+    try:
+        test_game.choose_color_move(player_1, CardColors.WILD)
+        raise AssertionError("choose_color_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
+
+    # Player 1 does it right
     test_game.choose_color_move(player_1, CardColors.GREEN)
+
+    # Player 2 then tries to choose a color, but fails because the game is not waiting for them to choose a color
+    try:
+        test_game.choose_color_move(player_2, CardColors.BLUE)
+        raise AssertionError("choose_color_move should have raised an OutOfTurnError")
+    except OutOfTurnError:
+        pass
 
     assert test_game.current_stack == 4
 
@@ -542,7 +678,16 @@ def test_plus_response_basic_stacking():
 
     assert player_1.hand.__len__() == 13
 
+
 def test_asymmetric_plus_stacks():
+    """
+    Tests that plus stacks with different types of plus cards work correctly.
+    Does not test that basic stacking works, or the edge cases of basic stacking.
+    Does not test choose_color_move.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
     test_game = UnoGame()
     
     # Manually add players to set up a specific game state
@@ -576,7 +721,7 @@ def test_asymmetric_plus_stacks():
 
     assert test_game.current_stack == 2
 
-    # Player 1 then adds to the stack
+    # Player 1 then adds to the stack with a plus 4
     test_game.play_card_move(player_1, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
 
     assert test_game.current_stack == 2
@@ -629,7 +774,15 @@ def test_asymmetric_plus_stacks():
 
     assert player_0.hand.__len__() == 16
 
+
 def test_jump_in_stacks():
+    """
+    Tests that stacks work correctly with jump-ins.
+    Does not test basic stack mechanics.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
     test_game = UnoGame()
     
     # Manually add players to set up a specific game state
@@ -658,7 +811,7 @@ def test_jump_in_stacks():
     test_game.ruleset.stack_color_matching_plus_twos_on_plus_fours = False
     test_game.ruleset.stack_plus_fours_on_plus_twos = False
 
-    # First test that the stack clears after jump-ins
+    # First test the rule that the stack clears after jump-ins
     test_game.ruleset.jump_ins_stack = False
 
     # Player 0 starts by playing a plus two
@@ -696,7 +849,7 @@ def test_jump_in_stacks():
 
     assert test_game.current_stack == 4
 
-    # Now player 0 can jump-in stack
+    # Now player 0 can jump-in stack the plus 4
     test_game.play_card_move(player_0, Card(CardColors.WILD, CardFaces.PLUS_FOUR))
     test_game.choose_color_move(player_0, CardColors.GREEN)
 
@@ -708,6 +861,12 @@ def test_jump_in_stacks():
     assert len(player_1.hand) == 10
 
 def test_pass_move():
+    """
+    Tests that passing can only happen in the allowed cases.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
 
     test_game = UnoGame()
     
@@ -751,7 +910,15 @@ def test_pass_move():
 
     assert test_game.turn_index == 1
 
+
 def test_zero_rotate():
+    """
+    Tests that the zero rotate rule works correctly.
+    Also tests the various sub rules related to zero rotate.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
     test_game = UnoGame()
     
     # Manually add players to set up a specific game state
@@ -782,6 +949,8 @@ def test_zero_rotate():
         pass 
 
     test_game.play_card_move(player_0, Card(CardColors.RED, CardFaces.ZERO))
+
+    assert test_game.state == UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE
 
     # You cannot deny the rotate if force_zero_rotate is on
     try:
@@ -860,11 +1029,19 @@ def test_zero_rotate():
     test_game.ruleset.jump_in_during_zero = False
     try:
         test_game.play_card_move(player_1, Card(CardColors.GREEN, CardFaces.ZERO))
-        raise AssertionError("seven_swap_move should have raised an OutOfTurnError")
+        raise AssertionError("play_card_move should have raised an OutOfTurnError")
     except OutOfTurnError:
         pass 
 
+
 def test_seven_swap():
+    """
+    Tests that the seven swap rule works correctly.
+    Also tests the various sub rules related to seven swap.
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
     test_game = UnoGame()
     
     # Manually add players to set up a specific game state
@@ -896,7 +1073,9 @@ def test_seven_swap():
 
     test_game.play_card_move(player_0, Card(CardColors.RED, CardFaces.SEVEN))
 
-    # You cannot deny the swap if force_seven_swap is on
+    assert test_game.state == UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP
+
+    # You cannot deny the swap (swap with yourself) if force_seven_swap is on
     try:
         test_game.seven_swap_move(player_0, 0)
         raise AssertionError("seven_swap_move should have raised an ValueError")

@@ -21,10 +21,9 @@ class UnoGame:
         self.reversed = False
         self.state = UnoStates.PREGAME
 
-        
-    def add_player(self, player_id: int) -> None:
+    def create_player(self, player_id: int) -> None:
         """
-        Adds a provided player to the game and draws them a hand
+        Creates a player with the provided id, then draws them a hand and adds them to the game 
 
         Args:
             player_id (int): The player_id to add
@@ -52,6 +51,7 @@ class UnoGame:
 
         # Add them to the list
         self.players.append(new_player)
+
 
     def remove_player(self, player_id: int) -> None:
         """
@@ -229,7 +229,8 @@ class UnoGame:
         """
         The given player draws a card, or as many cards as needed to obtain a playable card,
         based on ruleset.draw_until_can_play.
-        This is also used to accept drawing cards from a single plus card or a stack
+        This is also used to accept drawing cards from a single plus card or a stack.
+        If the deck runs out of cards during drawing, then drawing is ended, and play continues
 
         Args:
             player (Player): The player drawing cards
@@ -280,6 +281,7 @@ class UnoGame:
                     except OutOfCardsError:
                         break
 
+                # Wait to see what they want to do with the last card they drew
                 self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
             # In draw one mode, the turn is automatically passed to the next player
             else:
@@ -321,20 +323,23 @@ class UnoGame:
 
     def choose_color_move(self, player: Player, color: CardColors) -> None:
         """
-        _summary_
+        The given player chooses a color for a wild card.
 
         Args:
-            player (Player): _description_
-            card (Card): _description_
+            player (Player): The player picking the color
+            color (CardColors): The color chosen. Cannot be WILD
 
         Raises:
-            OutOfTurnError: _description_
-            InvalidCardPlayedError: _description_
+            OutOfTurnError: If the game is not waiting for the given player to choose a color
+            InvalidCardPlayedError: If the color given is WILD
         """
 
         # If we aren't waiting for a color or it isn't this player's turn
         if self.state != UnoStates.WAITING_FOR_WILD_COLOR or self.players[self.turn_index] != player:
             raise OutOfTurnError
+        
+        if color == CardColors.WILD:
+            raise InvalidCardPlayedError("Must choose a color that isn't wild")
         
         card = Card(color, self.deck.top_card.face)
         # This is a temp card to show the color and do potential plus card processing. Do not store it in discard pile
