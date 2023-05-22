@@ -1,7 +1,16 @@
 import discord
 from discord.ext import commands
 
+import dotenv
+from pathlib import Path # type: ignore (pylance shadow stdlib issues)
+
+config = dotenv.dotenv_values(Path('storage/.env'))
+
 bot = commands.Bot()
+bot.load_extension("bot.info_cog")
+
+if str(config["DEV_MODE"]).lower() == "true":
+    bot.debug_guilds = [764385563289452545]
 
 @bot.event
 async def on_ready():
@@ -14,5 +23,7 @@ async def on_ready():
 
 
 
-
+@bot.slash_command(name="hello")
+async def hello_world(ctx: discord.ApplicationContext):
+    await ctx.respond("Hi there")
 
