@@ -8,6 +8,7 @@ config = dotenv.dotenv_values(Path('storage/.env'))
 
 bot = commands.Bot()
 bot.load_extension("bot.info_cog")
+bot.load_extension("bot.game_cog")
 
 if str(config["DEV_MODE"]).lower() == "true":
     bot.debug_guilds = [764385563289452545]
