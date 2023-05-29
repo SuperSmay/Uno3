@@ -484,7 +484,13 @@ class UnoGame:
     def start_game(self):
         """
         Starts the game
+
+        Raises:
+            OutOfTurnError: If the game has already started
         """
+        if self.state != UnoStates.PREGAME:
+            raise OutOfTurnError
+        
         self.state = UnoStates.WAITING_FOR_PLAY
 
 
