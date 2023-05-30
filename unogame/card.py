@@ -40,6 +40,25 @@ class Card:
         image_url = f"{face_string}_{color_string}"
 
         return card_images[image_url]
+    
+    def get_color_code(self) -> int:
+        """
+        Returns the decimal color code for this card
+
+        Returns:
+            int: The decimal color code
+        """
+        match self.color:
+            case CardColors.BLUE:
+                return 29372
+            case CardColors.GREEN:
+                return 5876292
+            case CardColors.YELLOW:
+                return 16768534
+            case CardColors.RED:
+                return 15539236
+            case _:
+                return 4802889
 
     def can_be_played(self, other_card: Card) -> bool:
         """
@@ -95,6 +114,9 @@ class Card:
             return __o.color == self.color and __o.face == self.face
         else:
             return False
+        
+    def __str__(self) -> str:
+        return f"{self.color} {self.face}"
 
 
 

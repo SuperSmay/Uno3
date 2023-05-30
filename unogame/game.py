@@ -21,6 +21,10 @@ class UnoGame:
         self.reversed = False
         self.state = UnoStates.PREGAME
 
+        # Status message stuff
+        self.status_message = "Waiting to start..."
+        self.status_players = ()
+
     def create_player(self, player_id: int) -> None:
         """
         Creates a player with the provided id, then draws them a hand and adds them to the game 
@@ -83,6 +87,9 @@ class UnoGame:
 
         Args:
             player_id (int): The id to get
+
+        Raises:
+            ValueError: If the player is not in the game
 
         Returns:
            Player: The player with the given id
@@ -351,7 +358,7 @@ class UnoGame:
     def process_card_state_changes(self, player: Player, card: Card):
         """
         Processes the state change after a card is played normally.
-        Sets state to WAITING_FOR_WILD_COLOR after a wild for example
+        Sets state to WAITING_FOR_WILD_COLOR after a wild for example.
         Also processes skips, reverses, and plus cards
 
 
