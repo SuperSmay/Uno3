@@ -37,7 +37,7 @@ class GameCog(commands.Cog):
 
     @commands.slash_command(name="lobby", description="Show the current game lobby")
     async def show_lobby(self, ctx: discord.ApplicationContext):
-        await ctx.respond(embed=game_support.lobby_embed(ctx))
+        await game_support.run_lobby_command(ctx)
 
     @commands.slash_command(name="start", description="Start the game when all players are ready")
     async def start_game(self, ctx: discord.ApplicationContext):
@@ -45,7 +45,7 @@ class GameCog(commands.Cog):
             create_command = self.bot.get_application_command("create_game")
             response_string = "There isn't a game in this channel yet!"
             if create_command is not None:
-                response_string += f" Create one with </create_game:{create_command.id}>"
+                response_string += f" Create one with </{create_command.name}:{create_command.id}>"
             await ctx.respond(embed=discord.Embed(description=response_string, color=INFO_COLOR), delete_after=10)
             return
         

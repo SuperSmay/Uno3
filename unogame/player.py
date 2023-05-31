@@ -1,7 +1,6 @@
 from __future__ import annotations # type: ignore (pylance shadow stdlib issues)
 from unogame.card import Card
 
-
 class Player:
 
     def __init__(self, player_id: int) -> None:

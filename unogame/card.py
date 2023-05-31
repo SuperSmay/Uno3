@@ -6,10 +6,23 @@ from unogame.card_image_dictionaries import card_emoji, card_images
 
 class Card:
 
+    BACK_EMOJI = card_emoji['back']
+    BACK_IMAGE =  card_images['back']
+
     def __init__(self, color: CardColors, face: CardFaces, return_to_discard: bool = True) -> None:
         self.color = color
         self.face = face
         self.return_to_discard = return_to_discard
+
+    @classmethod
+    def from_string(cls, string) -> Card:
+        card_color_string, card_face_string = tuple(string.split(" "))
+        card_color = CardColors(card_color_string)
+        card_face = CardFaces(card_face_string)
+        if (card_face == CardFaces.WILD or card_face == CardFaces.PLUS_FOUR) and card_color != CardColors.WILD:
+            return Card(card_color, card_face, return_to_discard=False)
+        else:
+            return Card(card_color, card_face)
 
     def get_emoji_mention(self) -> str:
         """
@@ -116,7 +129,7 @@ class Card:
             return False
         
     def __str__(self) -> str:
-        return f"{self.color} {self.face}"
+        return f"{self.color.value} {self.face.value}"
 
 
 

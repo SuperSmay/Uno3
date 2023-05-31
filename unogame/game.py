@@ -24,6 +24,8 @@ class UnoGame:
         # Status message stuff
         self.status_message = "Waiting to start..."
         self.status_players = ()
+        # Discord interaction stuff
+        self.lobby_message_id: int | None = None
 
     def create_player(self, player_id: int) -> None:
         """
@@ -141,7 +143,7 @@ class UnoGame:
             if len(player.hand) == 0:
                 self.state = UnoStates.PLAYER_WON
 
-            self.process_card_state_changes(player, card)
+            self._process_card_state_changes(player, card)
 
         elif (self.state == UnoStates.WAITING_FOR_PLUS_RESPONSE):
             # If the card is a plus card that can be stacked, then the card is added to the stack and play continues
@@ -226,7 +228,7 @@ class UnoGame:
                 self.current_stack = 0
 
 
-            self.process_card_state_changes(player, card)
+            self._process_card_state_changes(player, card)
         
         # If we still haven't hit a valid case for playing a card, then raise an error, as the play wasn't valid
         else:
@@ -355,7 +357,7 @@ class UnoGame:
         self.state = UnoStates.WAITING_FOR_PLAY
         self.play_card_move(player, card)
 
-    def process_card_state_changes(self, player: Player, card: Card):
+    def _process_card_state_changes(self, player: Player, card: Card):
         """
         Processes the state change after a card is played normally.
         Sets state to WAITING_FOR_WILD_COLOR after a wild for example.
