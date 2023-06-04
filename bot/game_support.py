@@ -2,11 +2,11 @@ import discord
 from discord.interactions import Interaction
 from bot.global_variables import *
 from bot.global_game_info import current_games
-from unogame.card import Card
+from unogame.card import Card, CardColors
 from unogame.game import MustPlayCardError, OutOfTurnError, UnoGame, UnoStates
 from unogame.player import Player
 
-
+#region lobby
 async def run_lobby_command(ctx: discord.ApplicationContext):
 
     if ctx.channel_id not in current_games:
@@ -29,8 +29,41 @@ async def run_lobby_command(ctx: discord.ApplicationContext):
     sent_message = await ctx.response.send_message(embed=response_embed)
 
     game.lobby_message_id = (await sent_message.original_response()).id
+#endregion
+
+#region hand
+async def run_hand_command(interaction: discord.Interaction):
+
+    if interaction.user is None:
+        response_embed = discord.Embed(description="An error occurred", color=ERROR_COLOR)
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)
+        return
+    
+    if interaction.channel_id not in current_games:
+        response_embed = discord.Embed(description="There is not a game in this channel yet!")
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)
+        return
+
+    game = current_games[interaction.channel_id]
+    try:
+        player = game.get_player(interaction.user.id)
+        response_embed = hand_embed(player)
+        response_view = HandView(game, player)
+        await interaction.response.send_message(embed=response_embed, view=response_view , ephemeral=True)
+        
+        if game.state == UnoStates.WAITING_FOR_WILD_COLOR and game.is_players_turn(player):
+            await interaction.followup.send(embed=color_choice_embed(), view=ChooseColorView(game, player), ephemeral=True)
 
 
+    except ValueError:
+        response_embed = discord.Embed(description="You aren't in the game!", color=ERROR_COLOR)
+        await interaction.response.send_message.respond(embed=response_embed, view=None , ephemeral=True)
+        return
+
+
+
+
+#endregion
 
 def create_game_embed() -> discord.Embed:
     embed = discord.Embed(title="New game", description="Create a new game in this channel.", color=INFO_COLOR)
@@ -62,40 +95,65 @@ def game_status_embed(ctx: discord.ApplicationContext | discord.Interaction) -> 
 
     return embed
     
-def hand_embed(ctx: discord.ApplicationContext | discord.Interaction) -> discord.Embed:
-    if ctx.channel_id not in current_games:
-        return discord.Embed(description="There is not a game in this channel yet!")
+def hand_embed(player: Player) -> discord.Embed:
+    embed = discord.Embed(title=f"Your hand")
+    embed.add_field(name="Cards", value=", ".join([card.get_emoji_mention() for card in player.hand]))
+    return embed
     
-    if ctx.user is None:
-        return discord.Embed(description="An error occurred", color=ERROR_COLOR)
+def color_choice_embed() -> discord.Embed:
+    return discord.Embed(description="Pick a color")
 
-    game = current_games[ctx.channel_id]
-    try:
-        player = game.get_player(ctx.user.id)
-        embed = discord.Embed(title=f"Your hand")
-        embed.add_field(name="Cards", value=", ".join([card.get_emoji_mention() for card in player.hand]))
-        return embed
-    except ValueError:
-        return discord.Embed(description="You aren't in the game!", color=ERROR_COLOR)
-    
-class HandView(discord.ui.View):
-    def __init__(self, ctx: discord.ApplicationContext | discord.Interaction):
+class ChooseColorView(discord.ui.View):
+    def __init__(self, game: UnoGame, player: Player):
         super().__init__()
 
-        if ctx.channel_id not in current_games:
-            return None
-        
-        if ctx.user is None:
-            return None
+        self.add_item(self.ColorButton(game, player, CardColors.RED))
+        self.add_item(self.ColorButton(game, player, CardColors.BLUE))
+        self.add_item(self.ColorButton(game, player, CardColors.YELLOW))
+        self.add_item(self.ColorButton(game, player, CardColors.GREEN))
 
-        game = current_games[ctx.channel_id]
-        try:
-            player = game.get_player(ctx.user.id)
-            self.add_item(self.HandDropdown(game, player))
-            self.add_item(self.HandButton(game, player))
+
+    class ColorButton(discord.ui.Button):
+        def __init__(self, game: UnoGame, player: Player, color: CardColors):
+            super().__init__(label=color.value, emoji=Card.BACK_EMOJI)
+            self.game = game
+            self.player = player
+            self.color = color
+
+
+        async def refresh_hand(self, interaction: discord.Interaction):
+            if self.view is not None:
+                await self.view.message.delete()
+            await run_hand_command(interaction)
+
+        async def refresh_lobby(self, interaction: discord.Interaction):
+            lobby_message_id = self.game.lobby_message_id
+            if lobby_message_id is not None:
+                message = await interaction.channel.fetch_message(lobby_message_id)  # type: ignore - pylance channel type issue
+                await message.edit(embed=game_status_embed(interaction))
+            else:
+                message = await interaction.channel.send(embed=game_status_embed(interaction))  # type: ignore - pylance channel type issue
+                self.game.lobby_message_id = message.id
+
+        async def callback(self, interaction: Interaction):
+            try:
+                self.game.choose_color_move(self.player, self.color)
+                await self.refresh_lobby(interaction)
+                await interaction.response.send_message(f"You picked {self.color}", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
+                if self.view is not None:
+                    await self.view.message.delete() 
+
+            except OutOfTurnError:
+                await interaction.followup.send("It's not your turn", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
+    
+class HandView(discord.ui.View):
+    def __init__(self, game: UnoGame, player: Player):
+        super().__init__()
+
+        self.add_item(self.HandDropdown(game, player))
+        self.add_item(self.HandButton(game, player))
             
-        except ValueError:
-            return None
+  
         
     class HandButton(discord.ui.Button):
         def __init__(self, game: UnoGame, player: Player):
@@ -106,7 +164,7 @@ class HandView(discord.ui.View):
         async def refresh_hand(self, interaction: discord.Interaction):
             if self.view is not None:
                 await self.view.message.delete()
-            await interaction.response.send_message(embed=hand_embed(interaction), view=HandView(interaction), ephemeral=True)
+            await run_hand_command(interaction)
 
         async def refresh_lobby(self, interaction: discord.Interaction):
             lobby_message_id = self.game.lobby_message_id
@@ -153,7 +211,7 @@ class HandView(discord.ui.View):
         async def refresh_hand(self, interaction: discord.Interaction):
             if self.view is not None:
                 await self.view.message.delete()
-            await interaction.response.send_message(embed=hand_embed(interaction), view=HandView(interaction), ephemeral=True)
+            await run_hand_command(interaction)
 
         async def refresh_lobby(self, interaction: discord.Interaction):
             lobby_message_id = self.game.lobby_message_id
@@ -171,8 +229,7 @@ class HandView(discord.ui.View):
                 self.game.play_card_move(self.player, card_chosen)
                 await self.refresh_hand(interaction)
                 await self.refresh_lobby(interaction)
-                await interaction.followup.send(f"You played {str(card_chosen)}", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
-                
+                await interaction.followup.send(f"You played {str(card_chosen)}", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue              
 
             except:
                 await self.refresh_hand(interaction)

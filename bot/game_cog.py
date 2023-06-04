@@ -60,7 +60,7 @@ class GameCog(commands.Cog):
 
     @commands.slash_command(name="hand", description="Privately look at your hand")
     async def show_hand(self, ctx: discord.ApplicationContext):
-        await ctx.respond(embed=game_support.hand_embed(ctx), view=game_support.HandView(ctx) , ephemeral=True)
+        await game_support.run_hand_command(ctx.interaction)
             
 
 
