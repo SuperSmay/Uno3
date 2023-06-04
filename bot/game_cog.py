@@ -16,20 +16,7 @@ class GameCog(commands.Cog):
 
     @commands.slash_command(name="join", description="Join a game in the current channel")
     async def join(self, ctx: discord.ApplicationContext):
-        if ctx.channel_id in current_games:
-            try:
-                current_games[ctx.channel_id].create_player(ctx.author.id)
-                await ctx.respond(embed=discord.Embed(description="You joined the game!", color=SUCCESS_COLOR), delete_after=5)
-            except ValueError as error:
-                await ctx.respond(embed=discord.Embed(description="You are already in this game!", color=ERROR_COLOR), delete_after=5)
-            except OutOfCardsError as error:
-                await ctx.respond(embed=discord.Embed(description="There aren't enough cards to add another player!", color=ERROR_COLOR), delete_after=5)
-        else:
-            create_command = self.bot.get_application_command("create_game")
-            response_string = "There isn't a game in this channel yet!"
-            if create_command is not None:
-                response_string += f" Create one with </create_game:{create_command.id}>"
-            await ctx.respond(embed=discord.Embed(description=response_string, color=INFO_COLOR), delete_after=10)
+        await game_support.run_join_command(ctx)
 
     @commands.slash_command(name="create_game", description="Create a new game in this channel")
     async def create_game(self, ctx: discord.ApplicationContext):
@@ -41,22 +28,7 @@ class GameCog(commands.Cog):
 
     @commands.slash_command(name="start", description="Start the game when all players are ready")
     async def start_game(self, ctx: discord.ApplicationContext):
-        if ctx.channel_id not in current_games:
-            create_command = self.bot.get_application_command("create_game")
-            response_string = "There isn't a game in this channel yet!"
-            if create_command is not None:
-                response_string += f" Create one with </{create_command.name}:{create_command.id}>"
-            await ctx.respond(embed=discord.Embed(description=response_string, color=INFO_COLOR), delete_after=10)
-            return
-        
-        game = current_games[ctx.channel_id]
-        embed_response = discord.Embed(description="An error occurred", color=ERROR_COLOR)
-        try:
-            game.start_game()
-            embed_response = discord.Embed(description="Game started!", color=SUCCESS_COLOR)
-        except OutOfTurnError:
-            embed_response = discord.Embed(description="The game already started!", color=ERROR_COLOR)
-        await ctx.respond(embed=embed_response)
+        await game_support.run_start_game_command(ctx)
 
     @commands.slash_command(name="hand", description="Privately look at your hand")
     async def show_hand(self, ctx: discord.ApplicationContext):

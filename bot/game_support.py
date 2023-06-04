@@ -3,6 +3,7 @@ from discord.interactions import Interaction
 from bot.global_variables import *
 from bot.global_game_info import current_games
 from unogame.card import Card, CardColors
+from unogame.deck import OutOfCardsError
 from unogame.game import MustPlayCardError, OutOfTurnError, UnoGame, UnoStates
 from unogame.player import Player
 
@@ -29,6 +30,33 @@ async def run_lobby_command(ctx: discord.ApplicationContext):
     sent_message = await ctx.response.send_message(embed=response_embed)
 
     game.lobby_message_id = (await sent_message.original_response()).id
+
+def game_status_embed(ctx: discord.ApplicationContext | discord.Interaction) -> discord.Embed:
+
+    if ctx.channel_id not in current_games:
+        return discord.Embed(description="There is not a game in this channel yet!")
+
+    game = current_games[ctx.channel_id]
+    embed = discord.Embed(title=f"Game in <#{ctx.channel_id}>", color=game.deck.top_card.get_color_code())
+
+    def turn_annotation(i):
+
+        player: Player = game.players[i]
+        player_line = f"<@{player.player_id}> - Cards: {len(player.hand)}"
+
+        if i == game.turn_index:
+            return f"__{player_line}__ {'↓' if not game.reversed else '↑'}"
+        else:
+            return player_line
+            
+    annotated_player_list = [turn_annotation(i) for i in range(len(game.players))]
+
+    embed.add_field(name="Players:", value="\n".join(annotated_player_list), inline=False)
+    embed.add_field(name="Game", value=(f"{game.status_message}\nIt's <@{game.players[game.turn_index].player_id}>'s turn" % game.status_players), inline=False)
+    embed.set_thumbnail(url=game.deck.top_card.get_image_url())
+
+    return embed
+
 #endregion
 
 #region hand
@@ -60,41 +88,6 @@ async def run_hand_command(interaction: discord.Interaction):
         await interaction.response.send_message.respond(embed=response_embed, view=None , ephemeral=True)
         return
 
-
-
-
-#endregion
-
-def create_game_embed() -> discord.Embed:
-    embed = discord.Embed(title="New game", description="Create a new game in this channel.", color=INFO_COLOR)
-    return embed
-    
-def game_status_embed(ctx: discord.ApplicationContext | discord.Interaction) -> discord.Embed:
-
-    if ctx.channel_id not in current_games:
-        return discord.Embed(description="There is not a game in this channel yet!")
-
-    game = current_games[ctx.channel_id]
-    embed = discord.Embed(title=f"Game in <#{ctx.channel_id}>", color=game.deck.top_card.get_color_code())
-
-    def turn_annotation(i):
-
-        player: Player = game.players[i]
-        player_line = f"<@{player.player_id}> - Cards: {len(player.hand)}"
-
-        if i == game.turn_index:
-            return f"__{player_line}__ {'↓' if not game.reversed else '↑'}"
-        else:
-            return player_line
-            
-    annotated_player_list = [turn_annotation(i) for i in range(len(game.players))]
-
-    embed.add_field(name="Players:", value="\n".join(annotated_player_list), inline=False)
-    embed.add_field(name="Game", value=(f"{game.status_message}\nIt's <@{game.players[game.turn_index].player_id}>'s turn" % game.status_players), inline=False)
-    embed.set_thumbnail(url=game.deck.top_card.get_image_url())
-
-    return embed
-    
 def hand_embed(player: Player) -> discord.Embed:
     embed = discord.Embed(title=f"Your hand")
     embed.add_field(name="Cards", value=", ".join([card.get_emoji_mention() for card in player.hand]))
@@ -237,6 +230,72 @@ class HandView(discord.ui.View):
             
             
     
+
+
+#endregion
+
+#region start
+
+async def run_start_game_command(ctx: discord.ApplicationContext):
+    if ctx.channel_id not in current_games:
+        create_command = ctx.bot.get_application_command("create_game")
+        response_string = "There isn't a game in this channel yet!"
+        if create_command is not None:
+            response_string += f" Create one with </{create_command.name}:{create_command.id}>"
+        await ctx.respond(embed=discord.Embed(description=response_string, color=INFO_COLOR), delete_after=10)
+        return
+    
+    game = current_games[ctx.channel_id]
+    
+    try:
+        game.start_game()
+        embed_response = discord.Embed(description="Game started!", color=SUCCESS_COLOR)
+        await ctx.respond(embed=embed_response)
+
+        await run_lobby_command(ctx)
+
+        return
+    except OutOfTurnError:
+        embed_response = discord.Embed(description="The game already started!", color=ERROR_COLOR)
+        await ctx.respond(embed=embed_response)
+        return
+    
+
+
+#endregion
+
+
+#region join
+
+async def run_join_command(ctx: discord.ApplicationContext):
+    if ctx.channel_id not in current_games:
+        create_command = ctx.bot.get_application_command("create_game")
+        response_string = "There isn't a game in this channel yet!"
+        if create_command is not None:
+            response_string += f" Create one with </create_game:{create_command.id}>"
+        await ctx.respond(embed=discord.Embed(description=response_string, color=INFO_COLOR), delete_after=10)
+        return
+
+    try:
+        current_games[ctx.channel_id].create_player(ctx.author.id)
+        await ctx.respond(embed=discord.Embed(description="You joined the game!", color=SUCCESS_COLOR), delete_after=5)
+        await run_hand_command(ctx.interaction)
+
+    except ValueError as error:
+        await ctx.respond(embed=discord.Embed(description="You are already in this game!", color=ERROR_COLOR), delete_after=5)
+    except OutOfCardsError as error:
+        await ctx.respond(embed=discord.Embed(description="There aren't enough cards to add another player!", color=ERROR_COLOR), delete_after=5)
+
+
+#endregion
+
+def create_game_embed() -> discord.Embed:
+    embed = discord.Embed(title="New game", description="Create a new game in this channel.", color=INFO_COLOR)
+    return embed
+    
+
+    
+
 
 class CreateGameView(discord.ui.View):
     def __init__(self):
