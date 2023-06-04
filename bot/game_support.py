@@ -1,3 +1,4 @@
+from typing import Callable, Coroutine
 import discord
 from discord.interactions import Interaction
 from bot.global_variables import *
@@ -140,24 +141,31 @@ class ChooseColorView(discord.ui.View):
                 await interaction.followup.send("It's not your turn", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
     
 class HandView(discord.ui.View):
-    def __init__(self, game: UnoGame, player: Player):
+    def __init__(self, game: UnoGame, player: Player, message: discord.Message | None = None):
         super().__init__()
 
-        self.add_item(self.HandDropdown(game, player))
-        self.add_item(self.HandButton(game, player))
+        self.add_item(self.HandDropdown(game, player, self.refresh_hand))
+        self.add_item(self.HandButton(game, player, self.refresh_hand))
             
+        self.input_message = message
+        self.player = player
+        self.game = game
   
         
+    async def refresh_hand(self, interaction: discord.Interaction):
+        if self.input_message is not None:
+            await self.input_message.edit(embed=hand_embed(self.player), view=HandView(self.game, self.player, self.input_message))
+        elif self.message is not None:
+            await self.message.edit(embed=hand_embed(self.player), view=HandView(self.game, self.player, self.message))
+        else:
+            await interaction.followup.send(embed=hand_embed(self.player), view=HandView(self.game, self.player))
+
     class HandButton(discord.ui.Button):
-        def __init__(self, game: UnoGame, player: Player):
+        def __init__(self, game: UnoGame, player: Player, refresh_callback):
             super().__init__(label="Draw", emoji=Card.BACK_EMOJI)
             self.game = game
             self.player = player
-
-        async def refresh_hand(self, interaction: discord.Interaction):
-            if self.view is not None:
-                await self.view.message.delete()
-            await run_hand_command(interaction)
+            self.refresh_callback = refresh_callback
 
         async def refresh_lobby(self, interaction: discord.Interaction):
             lobby_message_id = self.game.lobby_message_id
@@ -171,7 +179,7 @@ class HandView(discord.ui.View):
         async def callback(self, interaction: Interaction):
             try:
                 self.game.draw_card_move(self.player)
-                await self.refresh_hand(interaction)
+                await self.refresh_callback(interaction)
                 await self.refresh_lobby(interaction)
                 await interaction.followup.send(f"You drew cards", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
                 
@@ -184,7 +192,7 @@ class HandView(discord.ui.View):
 
 
     class HandDropdown(discord.ui.Select):
-        def __init__(self, game: UnoGame, player: Player):
+        def __init__(self, game: UnoGame, player: Player, refresh_callback):
             hand_no_duplicates = []
             for card in player.hand:
                 if card not in hand_no_duplicates:
@@ -200,11 +208,7 @@ class HandView(discord.ui.View):
             )
             self.player = player
             self.game = game
-
-        async def refresh_hand(self, interaction: discord.Interaction):
-            if self.view is not None:
-                await self.view.message.delete()
-            await run_hand_command(interaction)
+            self.refresh_callback = refresh_callback
 
         async def refresh_lobby(self, interaction: discord.Interaction):
             lobby_message_id = self.game.lobby_message_id
@@ -220,12 +224,12 @@ class HandView(discord.ui.View):
             card_chosen = Card.from_string(self.values[0])
             try:
                 self.game.play_card_move(self.player, card_chosen)
-                await self.refresh_hand(interaction)
+                await self.refresh_callback(interaction)
                 await self.refresh_lobby(interaction)
                 await interaction.followup.send(f"You played {str(card_chosen)}", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue              
 
             except:
-                await self.refresh_hand(interaction)
+                await self.refresh_callback(interaction)
                 await interaction.followup.send("You can't play that right now!", ephemeral=True, delete_after=5)  # type: ignore - pylance overload issue
             
             

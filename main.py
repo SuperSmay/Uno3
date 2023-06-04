@@ -4,4 +4,4 @@ from pathlib import Path # type: ignore (pylance shadow stdlib issues)
 
 config = dotenv.dotenv_values(Path('storage/.env'))
 
-bot.run(config['TOKEN'])
+bot.run(config['TOKEN_OLD'])
