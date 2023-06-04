@@ -101,6 +101,74 @@ def test_get_player():
     assert test_game.get_player(1) == player
 
 
+def test_is_players_turn():
+    """
+    Tests that UnoGame.is_players_turn returns the correct value
+
+    Raises:
+        AssertionError: If any of the tests fail
+    """
+
+    test_game = UnoGame()
+
+    test_game.create_player(0)
+    test_game.create_player(1)
+    test_game.create_player(2)
+
+    # Manually get the player with ID 1 from the list of players (Thanks https://stackoverflow.com/a/2364277)
+    player0 = next(player for player in test_game.players if player.player_id == 0)
+    player1 = next(player for player in test_game.players if player.player_id == 1)
+    assert test_game.is_players_turn(player0)
+    assert not test_game.is_players_turn(player1)
+
+
+def test_next_turn_index():
+    """
+    Tests that UnoGame._next_turn_index returns the correct value
+    
+    Raises:
+        AssertionError: If any of the tests fail
+    
+    """
+
+    test_game = UnoGame()
+
+    test_game.create_player(0)
+    test_game.create_player(1)
+    test_game.create_player(2)
+
+    test_game.turn_index = 0
+
+    # Should be a simple increment
+    assert test_game._next_turn_index(1) == 1
+    # More complex now
+    assert test_game._next_turn_index(2) == 2
+    assert test_game._next_turn_index(3) == 0
+
+
+    test_game.reversed = True
+
+    # Now test it backwards with various sizes
+    assert test_game._next_turn_index(1) == 2
+    assert test_game._next_turn_index(2) == 1
+    assert test_game._next_turn_index(3) == 0
+
+    # Now 2 players
+    test_game.remove_player(2)
+    test_game.reversed = False
+
+    assert test_game._next_turn_index(1) == 1
+    assert test_game._next_turn_index(2) == 0
+    assert test_game._next_turn_index(3) == 1
+
+    # Now 1 player (not that is really going to happen in a game but still)
+    test_game.remove_player(1)
+
+    assert test_game._next_turn_index(1) == 0
+    assert test_game._next_turn_index(2) == 0
+
+
+
 def test_basic_play_card_move():
     """
     Tests that UnoGame.play_card_move works in basic cases, and that the game state is updating correctly.
@@ -641,7 +709,7 @@ def test_plus_response_basic_stacking():
     try:
         test_game.choose_color_move(player_1, CardColors.WILD)
         raise AssertionError("choose_color_move should have raised an OutOfTurnError")
-    except OutOfTurnError:
+    except InvalidCardPlayedError:
         pass
 
     # Player 1 does it right

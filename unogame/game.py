@@ -98,6 +98,32 @@ class UnoGame:
         """
         index = self.players.index(Player(player_id))
         return self.players[index]
+    
+    def is_players_turn(self, player: Player) -> bool:
+        """
+        Utility function to check if its the given player's turn
+
+        Args:
+            player (Player): The player to check
+
+        Returns:
+            bool: True if it is currently the given player's turn
+        """
+        return self.players.index(player) == self.turn_index
+    
+    # TODO?
+    # def is_legal_play(self, card: Card) -> bool:
+    #     """
+    #     Returns true if the given card is a valid card to play at the current point in the game assuming that it would be played by the player whose turn it is.
+    #     Takes stacking rules into account.
+
+    #     Args:
+    #         card (Card): The card to check
+
+    #     Returns:
+    #         bool: True if the card is allowed to be played
+    #     """
+
 
     def play_card_move(self, player: Player, card: Card, allow_mismatch_play: bool = False) -> None:
         """
@@ -264,7 +290,7 @@ class UnoGame:
 
             # Reset the stack and increment the turn
             self.current_stack = 0
-            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.turn_index = self._next_turn_index(1)
             self.state = UnoStates.WAITING_FOR_PLAY
 
         # Make sure we're waiting for them to play a card
@@ -294,7 +320,7 @@ class UnoGame:
                 self.state = UnoStates.WAITING_FOR_DRAW_RESPONSE
             # In draw one mode, the turn is automatically passed to the next player
             else:
-                self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+                self.turn_index = self._next_turn_index(1)
                 self.state = UnoStates.WAITING_FOR_PLAY
 
     def pass_turn_move(self, player: Player) -> None:
@@ -327,7 +353,7 @@ class UnoGame:
             raise OutOfTurnError("Player has at least one valid play")
 
         # If all checks are passes, then this is allowed
-        self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+        self.turn_index = self._next_turn_index(1)
         self.state = UnoStates.WAITING_FOR_PLAY
 
     def choose_color_move(self, player: Player, color: CardColors) -> None:
@@ -357,6 +383,19 @@ class UnoGame:
         self.state = UnoStates.WAITING_FOR_PLAY
         self.play_card_move(player, card)
 
+    def _next_turn_index(self, change: int) -> int:
+        """
+        Returns the next index after changing by the given amount, taking reverse state into account. A change value of 1 represents a normal "next player's turn", 2 is a skip, etc.
+        The turn index being invalid is not accounted for in this function, and behavior in this case is not tested.
+
+        Args:
+            change (int): The amount to change the index by
+
+        Returns:
+            int: The new turn index
+        """
+        return (self.turn_index + (change if not self.reversed else -change)) % len(self.players)
+
     def _process_card_state_changes(self, player: Player, card: Card):
         """
         Processes the state change after a card is played normally.
@@ -372,29 +411,29 @@ class UnoGame:
             self.state = UnoStates.WAITING_FOR_WILD_COLOR
         elif card.face == CardFaces.PLUS_FOUR:
             self.current_stack += 4
-            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.turn_index = self._next_turn_index(1)
             self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
         elif card.face == CardFaces.PLUS_TWO:
             self.current_stack += 2
-            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.turn_index = self._next_turn_index(1)
             self.state = UnoStates.WAITING_FOR_PLUS_RESPONSE
         elif card.face == CardFaces.SKIP:
-            self.turn_index = (self.turn_index + (2 if not self.reversed else -2)) % len(self.players)
+            self.turn_index = self._next_turn_index(2)
             self.state = UnoStates.WAITING_FOR_PLAY
         elif card.face == CardFaces.REVERSE:
             self.reversed = not self.reversed
             if len(self.players) == 2:
                 # Acts as a skip in 1v1 per Uno rules
-                self.turn_index = (self.turn_index + (2 if not self.reversed else -2)) % len(self.players)
+                self.turn_index = self._next_turn_index(2)
             else:
-                self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+                self.turn_index = self._next_turn_index(1)
             self.state = UnoStates.WAITING_FOR_PLAY
         elif card.face == CardFaces.ZERO and self.ruleset.zero_rotate_hands:
             self.state = UnoStates.WAITING_FOR_CHOOSE_TO_ROTATE
         elif card.face == CardFaces.SEVEN and self.ruleset.seven_swap_hands:
             self.state = UnoStates.WAITING_FOR_PICK_PLAYER_TO_SWAP
         else:
-            self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+            self.turn_index = self._next_turn_index(1)
 
     def seven_swap_move(self, player: Player, player_index: int):
         """
@@ -433,7 +472,7 @@ class UnoGame:
             player.hand = self.players[player_index].hand
             self.players[player_index].hand = temp
 
-        self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+        self.turn_index = self._next_turn_index(1)
         self.state = UnoStates.WAITING_FOR_PLAY
 
     def zero_rotate_move(self, player: Player, choose_to_rotate: bool):
@@ -484,7 +523,7 @@ class UnoGame:
                 
                 self.players[0].hand = last_player_hand
 
-        self.turn_index = (self.turn_index + (1 if not self.reversed else -1)) % len(self.players)
+        self.turn_index = self._next_turn_index(1)
         self.state = UnoStates.WAITING_FOR_PLAY
 
 
